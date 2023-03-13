@@ -15,13 +15,12 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2019 STMicroelectronics.
-  * All rights reserved.</center></h2>
+  * Copyright (c) 2019 STMicroelectronics.
+  * All rights reserved.
   *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
   *
   ******************************************************************************
   */
@@ -79,22 +78,23 @@ LoopCopyDataInit:
   adds r4, r0, r3
   cmp r4, r1
   bcc CopyDataInit
-  
-  /* Copy from flash to CCMRAM */
- ldr r0, =_sccmram
- ldr r1, =_eccmram
- ldr r2, =_siccmram
- movs r3, #0
- b LoopCopyCcmInit
+
+/* Copy fast code from flash to CCMRAM */
+  ldr r0, =_sccmram
+  ldr r1, =_eccmram
+  ldr r2, =_siccmram
+  movs r3, #0
+  b LoopCopyCcmInit
+
 CopyCcmInit:
- ldr r4, [r2, r3]
- str r4, [r0, r3]
- adds r3, r3, #4
+  ldr r4, [r2, r3]
+  str r4, [r0, r3]
+  adds r3, r3, #4
+
 LoopCopyCcmInit:
- adds r4, r0, r3
- cmp r4, r1
- bcc CopyCcmInit
-/* End of copy to CCMRAM */
+  adds r4, r0, r3
+  cmp r4, r1
+  bcc CopyCcmInit
 
 /* Zero fill the bss segment. */
   ldr r2, =_sbss
@@ -512,4 +512,3 @@ g_pfnVectors:
 	.weak	FMAC_IRQHandler
 	.thumb_set FMAC_IRQHandler,Default_Handler
 
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
