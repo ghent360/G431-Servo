@@ -43,9 +43,9 @@ const GlobalConfig_reg_t globalConfig_reg =
 
 static const ApplicationConfig_reg_t M1_ApplicationConfig_reg =
 {
-  .maxMechanicalSpeed = 3204,
+  .maxMechanicalSpeed = 2000,
   .maxReadableCurrent = MAX_READABLE_CURRENT,
-  .nominalCurrent = 2177,
+  .nominalCurrent = 13607,
   .nominalVoltage = 24,
   .driveType = DRIVE_TYPE_M1,
 };
@@ -57,7 +57,7 @@ const MotorConfig_reg_t M1_MotorConfig_reg =
   .rs = 0.1,
   .ls = 0.00003*1.000,
   .ld = 0.00003,
-  .maxCurrent = 2177,
+  .maxCurrent = 13607,
   .name = "x8308"
 };
 

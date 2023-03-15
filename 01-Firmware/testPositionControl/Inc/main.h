@@ -110,8 +110,8 @@ void Error_Handler(void);
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define USER_PWM_Pin GPIO_PIN_15
-#define USER_PWM_GPIO_Port GPIOA
+#define M1_PWM_INPUT_Pin GPIO_PIN_15
+#define M1_PWM_INPUT_GPIO_Port GPIOA
 #define Start_Stop_Pin GPIO_PIN_10
 #define Start_Stop_GPIO_Port GPIOC
 #define Start_Stop_EXTI_IRQn EXTI15_10_IRQn

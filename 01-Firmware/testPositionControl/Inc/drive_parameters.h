@@ -31,7 +31,7 @@
 /******** MAIN AND AUXILIARY SPEED/POSITION SENSOR(S) SETTINGS SECTION ********/
 
 /*** Speed measurement settings ***/
-#define MAX_APPLICATION_SPEED_RPM       3204 /*!< rpm, mechanical */
+#define MAX_APPLICATION_SPEED_RPM       2000 /*!< rpm, mechanical */
 #define MIN_APPLICATION_SPEED_RPM       0 /*!< rpm, mechanical,
                                                            absolute value */
 #define M1_SS_MEAS_ERRORS_BEFORE_FAULTS 3 /*!< Number of speed
@@ -42,6 +42,41 @@
 #define ENC_AVERAGING_FIFO_DEPTH        16 /*!< depth of the FIFO used to
                                                               average mechanical speed in
                                                               0.1Hz resolution */
+#ifdef OBSERVER_PLL
+/****** State Observer + PLL ****/
+#define VARIANCE_THRESHOLD             0.25 /*!<Maximum accepted
+                                                            variance on speed
+                                                            estimates (percentage) */
+/* State observer scaling factors F1 */
+#define F1                               16384
+#define F2                               4096
+#define F1_LOG                           LOG2((16384))
+#define F2_LOG                           LOG2((4096))
+
+/* State observer constants */
+#define GAIN1                            -23218
+#define GAIN2                            18593
+/*Only in case PLL is used, PLL gains */
+#define PLL_KP_GAIN                      709
+#define PLL_KI_GAIN                      17
+#define PLL_KPDIV     16384
+#define PLL_KPDIV_LOG LOG2((PLL_KPDIV))
+#define PLL_KIDIV     65535
+#define PLL_KIDIV_LOG LOG2((PLL_KIDIV))
+
+#define STO_FIFO_DEPTH_DPP               64  /*!< Depth of the FIFO used
+                                                            to average mechanical speed
+                                                            in dpp format */
+#define STO_FIFO_DEPTH_DPP_LOG           LOG2((64))
+
+#define STO_FIFO_DEPTH_UNIT              64  /*!< Depth of the FIFO used
+                                                            to average mechanical speed
+                                                            in the unit defined by #SPEED_UNIT */
+#define BEMF_CONSISTENCY_TOL             64   /* Parameter for B-emf
+                                                            amplitude-speed consistency */
+#define BEMF_CONSISTENCY_GAIN            64   /* Parameter for B-emf
+                                                           amplitude-speed consistency */
+#endif
 
 /* USER CODE BEGIN angle reconstruction M1 */
 #define REV_PARK_ANGLE_COMPENSATION_FACTOR 0
@@ -62,11 +97,11 @@
 #define REGULATION_EXECUTION_RATE     1    /*!< FOC execution rate in
                                                            number of PWM cycles */
 /* Gains values for torque and flux control loops */
-#define PID_TORQUE_KP_DEFAULT         3671
-#define PID_TORQUE_KI_DEFAULT         1623
+#define PID_TORQUE_KP_DEFAULT         3719
+#define PID_TORQUE_KI_DEFAULT         1644
 #define PID_TORQUE_KD_DEFAULT         100
-#define PID_FLUX_KP_DEFAULT           3671
-#define PID_FLUX_KI_DEFAULT           1623
+#define PID_FLUX_KP_DEFAULT           3719
+#define PID_FLUX_KI_DEFAULT           1644
 #define PID_FLUX_KD_DEFAULT           100
 
 /* Torque/Flux control loop gains dividers*/
@@ -78,7 +113,7 @@
 #define TF_KDDIV_LOG                  LOG2((8192))
 #define TFDIFFERENTIAL_TERM_ENABLING  DISABLE
 
-#define POSITION_LOOP_FREQUENCY_HZ    ( uint16_t )1000 /*!<Execution rate of position control regulation loop (Hz) */
+#define POSITION_LOOP_FREQUENCY_HZ    ( uint16_t )2000 /*!<Execution rate of position control regulation loop (Hz) */
 
 #define PID_SPEED_KP_DEFAULT          3859/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 #define PID_SPEED_KI_DEFAULT          363/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
@@ -96,7 +131,7 @@
 /* USER CODE END PID_SPEED_INTEGRAL_INIT_DIV */
 
 #define SPD_DIFFERENTIAL_TERM_ENABLING DISABLE
-#define IQMAX                          2177
+#define IQMAX                          13607
 
 /* Default settings */
 #define DEFAULT_CONTROL_MODE           MCM_SPEED_MODE
@@ -146,12 +181,45 @@
 
 /******************************   START-UP PARAMETERS   **********************/
 /* Encoder alignment */
-#define ALIGNMENT_DURATION              700 /*!< milliseconds */
+#define ALIGNMENT_DURATION              1000 /*!< milliseconds */
 #define ALIGNMENT_ANGLE_DEG             90 /*!< degrees [0...359] */
-#define FINAL_I_ALIGNMENT               2177 /*!< s16A */
+#define FINAL_I_ALIGNMENT               2721 /*!< s16A */
 // With ALIGNMENT_ANGLE_DEG equal to 90 degrees final alignment
 // phase current = (FINAL_I_ALIGNMENT * 1.65/ Av)/(32767 * Rshunt)
 // being Av the voltage gain between Rshunt and A/D input
+
+/* USER CODE BEGIN OPENLOOP M1 */
+
+#define OPEN_LOOP_VOLTAGE_d           0      /*!< Three Phase voltage amplitude
+                                                      in int16_t format */
+#define OPEN_LOOP_SPEED_RPM           100       /*!< Final forced speed in rpm */
+#define OPEN_LOOP_SPEED_RAMP_DURATION_MS  1000  /*!< 0-to-Final speed ramp duration  */      
+#define OPEN_LOOP_VF                  false     /*!< true to enable V/F mode */
+#define OPEN_LOOP_K                   44        /*! Slope of V/F curve expressed in int16_t Voltage for 
+                                                     each 0.1Hz of mecchanical frequency increment. */
+#define OPEN_LOOP_OFF                 4400      /*! Offset of V/F curve expressed in int16_t Voltage 
+                                                     applied when frequency is zero. */
+/* USER CODE END OPENLOOP M1 */
+
+#ifdef OBSERVER_PLL
+/* Observer start-up output conditions  */
+#define OBS_MINIMUM_SPEED_RPM          1000
+
+#define NB_CONSECUTIVE_TESTS           2 /* corresponding to
+                                                         former NB_CONSECUTIVE_TESTS/
+                                                         (TF_REGULATION_RATE/
+                                                         MEDIUM_FREQUENCY_TASK_RATE) */
+#define SPEED_BAND_UPPER_LIMIT         17 /*!< It expresses how much
+                                                            estimated speed can exceed
+                                                            forced stator electrical
+                                                            without being considered wrong.
+                                                            In 1/16 of forced speed */
+#define SPEED_BAND_LOWER_LIMIT         15  /*!< It expresses how much
+                                                             estimated speed can be below
+                                                             forced stator electrical
+                                                             without being considered wrong.
+                                                             In 1/16 of forced speed */
+#endif
 
 #define TRANSITION_DURATION            25  /* Switch over duration, ms */
 

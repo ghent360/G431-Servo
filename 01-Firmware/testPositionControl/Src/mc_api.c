@@ -386,6 +386,42 @@ __weak int16_t MC_GetMecSpeedAverageMotor1(void)
 	return MCI_GetAvrgMecSpeedUnit( pMCI[M1] );
 }
 
+#ifdef OBSERVER_PLL
+#define S16ToRAD 10430.37835f            /* 2^16/2Pi */
+
+/**
+ * @brief Returns the last computed average mechanical rotor speed from auxiliary sensor for Motor 1, expressed in the unit defined by #SPEED_UNIT
+ */
+__weak int16_t MC_GetMecAuxiliarySpeedAverageMotor1(void)
+{
+	return SPD_GetAvrgMecSpeedUnit(&STO_PLL_M1._Super);
+}
+
+/**
+ * @brief Returns the last computed average mechanical rotor speed from auxiliary sensor for Motor 1, expressed in RPM
+ */
+__weak float MC_GetMecAuxiliarySpeedAverageMotor1_F(void)
+{
+  return( (float) ( SPD_GetAvrgMecSpeedUnit(&STO_PLL_M1._Super) * U_RPM) / SPEED_UNIT);
+}
+
+/**
+ * @brief Returns the electrical angle of the rotor from auxiliary sensor of Motor 1, in DDP format
+ */
+__weak int16_t MC_GetAuxiliaryElAngledppMotor1(void)
+{
+	return (SPD_GetElAngle(&STO_PLL_M1._Super));
+}
+
+/**
+ * @brief Returns the electrical angle of the rotor from auxiliary sensor of Motor 1, expressed in radians
+ */
+__weak float MC_GetAuxiliaryElAngleMotor1_F(void)
+{
+  return ((float)( (SPD_GetElAngle(&STO_PLL_M1._Super)) / S16ToRAD) );
+}
+#endif
+
 /**
  * @brief Returns the last computed average mechanical rotor speed for Motor 1, expressed in rpm.
  */

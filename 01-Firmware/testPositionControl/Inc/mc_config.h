@@ -36,12 +36,20 @@
 
 #include "r3_2_g4xx_pwm_curr_fdbk.h"
 
+#include "open_loop.h"
+
 #include "encoder_speed_pos_fdbk.h"
 #include "enc_align_ctrl.h"
+
+#include "esc.h"
 
 #include "ramp_ext_mngr.h"
 #include "circle_limitation.h"
 
+#ifdef OBSERVER_PLL
+#include "sto_speed_pos_fdbk.h"
+#include "sto_pll_speed_pos_fdbk.h"
+#endif
 /* USER CODE BEGIN Additional include */
 
 /* USER CODE END Additional include */
@@ -59,11 +67,15 @@ extern SpeednTorqCtrl_Handle_t SpeednTorqCtrlM1;
 extern PQD_MotorPowMeas_Handle_t PQD_MotorPowMeasM1;
 extern PQD_MotorPowMeas_Handle_t *pPQD_MotorPowMeasM1;
 extern VirtualSpeedSensor_Handle_t VirtualSpeedSensorM1;
+#ifdef OBSERVER_PLL
+extern STO_PLL_Handle_t STO_PLL_M1;
+#endif
 extern ENCODER_Handle_t ENCODER_M1;
 extern EncAlign_Handle_t EncAlignCtrlM1;
 extern RDivider_Handle_t BusVoltageSensor_M1;
 extern CircleLimitation_Handle_t CircleLimitationM1;
 extern RampExtMngr_Handle_t RampExtMngrHFParamsM1;
+extern OpenLoop_Handle_t OpenLoop_ParamsM1;
 
 extern MCI_Handle_t Mci[NBR_OF_MOTORS];
 extern SpeednTorqCtrl_Handle_t *pSTC[NBR_OF_MOTORS];
@@ -73,6 +85,7 @@ extern NTC_Handle_t *pTemperatureSensor[NBR_OF_MOTORS];
 extern PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS];
 extern PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS];
 extern MCI_Handle_t* pMCI[NBR_OF_MOTORS];
+extern ESC_Handle_t ESC_M1;
 /* USER CODE BEGIN Additional extern */
 
 /* USER CODE END Additional extern */

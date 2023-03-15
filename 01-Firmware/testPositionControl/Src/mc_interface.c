@@ -244,11 +244,24 @@ __weak void MCI_SetCurrentReferences(MCI_Handle_t *pHandle, qd_t Iqdref)
   {
 #endif
 
-    pHandle->lastCommand = MCI_CMD_SETCURRENTREFERENCES;
-    pHandle->Iqdref.q = Iqdref.q;
-    pHandle->Iqdref.d = Iqdref.d;
-    pHandle->CommandState = MCI_COMMAND_NOT_ALREADY_EXECUTED;
-    pHandle->LastModalitySetByUser = MCM_TORQUE_MODE;
+    MC_ControlMode_t mode;
+    mode = MCI_GetControlMode( pHandle );
+    if (mode == MCM_OPEN_LOOP_CURRENT_MODE)
+    {
+      pHandle->Iqdref.q = Iqdref.q;
+      pHandle->Iqdref.d = Iqdref.d;
+      pHandle->pFOCVars->Iqdref.q = Iqdref.q;
+      pHandle->pFOCVars->Iqdref.d = Iqdref.d;
+      pHandle->LastModalitySetByUser = mode;
+    }
+    else
+    {
+      pHandle->lastCommand = MCI_CMD_SETCURRENTREFERENCES;
+      pHandle->Iqdref.q = Iqdref.q;
+      pHandle->Iqdref.d = Iqdref.d;
+      pHandle->CommandState = MCI_COMMAND_NOT_ALREADY_EXECUTED;
+      pHandle->LastModalitySetByUser = MCM_TORQUE_MODE;
+    }
 #ifdef NULL_PTR_MC_INT
   }
 #endif
@@ -674,6 +687,7 @@ __weak void MCI_ExecBufferedCommands(MCI_Handle_t *pHandle)
         {
           pHandle->pFOCVars->bDriveInput = INTERNAL;
           STC_SetControlMode(pHandle->pSTC, MCM_SPEED_MODE);
+          VSS_SetMecAcceleration( pHandle->pVSS, pHandle->hFinalSpeed, pHandle->hDurationms);
           commandHasBeenExecuted = STC_ExecRamp(pHandle->pSTC, pHandle->hFinalSpeed, pHandle->hDurationms);
           break;
         }
@@ -690,6 +704,21 @@ __weak void MCI_ExecBufferedCommands(MCI_Handle_t *pHandle)
         {
           pHandle->pFOCVars->bDriveInput = EXTERNAL;
           pHandle->pFOCVars->Iqdref = pHandle->Iqdref;
+          commandHasBeenExecuted = true;
+          break;
+        }
+        case MCI_CMD_SETOPENLOOPCURRENT:
+        {
+          pHandle->pFOCVars->bDriveInput = EXTERNAL;
+          VSS_SetMecAcceleration( pHandle->pVSS, pHandle->hFinalSpeed, pHandle->hDurationms);
+          commandHasBeenExecuted = true;
+          break;
+		}
+
+        case MCI_CMD_SETOPENLOOPVOLTAGE:
+        {
+          pHandle->pFOCVars->bDriveInput = EXTERNAL;
+          VSS_SetMecAcceleration( pHandle->pVSS, pHandle->hFinalSpeed, pHandle->hDurationms);
           commandHasBeenExecuted = true;
           break;
         }

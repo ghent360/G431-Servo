@@ -28,8 +28,12 @@
 #include "mcpa.h"
 #include "mc_configuration_registers.h"
 
+#ifdef OBSERVER_PLL
+static STO_PLL_Handle_t * stoPLLSensor [NBR_OF_MOTORS] = { &STO_PLL_M1 };
+#endif
 static PID_Handle_t *pPIDSpeed[NBR_OF_MOTORS] = { &PIDSpeedHandle_M1 };
 PID_Handle_t *pPIDPosCtrl[NBR_OF_MOTORS] = { &PID_PosParamsM1 };
+static OpenLoop_Handle_t *pOL[NBR_OF_MOTORS] = { &OpenLoop_ParamsM1};
 static ENCODER_Handle_t *pEncoder[NBR_OF_MOTORS] = {&ENCODER_M1};
 
 static uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t dataAvailable);
@@ -197,13 +201,30 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
 
             if ((uint8_t)MCM_SPEED_MODE == regdata8)
             {
-              MCI_ExecSpeedRamp(pMCIN, MCI_GetMecSpeedRefUnit(pMCIN), 0);
+              MCI_SetSpeedMode(pMCIN);
             }
             else
             {
               /* Nothing to do */
             }
 
+            if ((uint8_t)regdata8 == MCM_OPEN_LOOP_CURRENT_MODE)
+            {
+              MCI_SetOpenLoopCurrent(pMCIN);
+            }
+            else
+            {
+              /* Nothing to do */
+            }
+
+            if ((uint8_t)regdata8 == MCM_OPEN_LOOP_VOLTAGE_MODE)
+            {
+              MCI_SetOpenLoopVoltage(pMCIN);
+            }
+            else
+            {
+              /* Nothing to do */
+            }
             break;
           }
 
@@ -327,6 +348,48 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             retVal = MCP_ERROR_RO_REG;
             break;
           }
+
+#ifdef OBSERVER_PLL
+          case MC_REG_STOPLL_C1:
+          {
+            int16_t hC1;
+            int16_t hC2;
+            STO_PLL_GetObserverGains(stoPLLSensor[motorID], &hC1, &hC2);
+            STO_PLL_SetObserverGains(stoPLLSensor[motorID], (int16_t)regdata16, hC2);
+            break;
+          }
+
+          case MC_REG_STOPLL_C2:
+          {
+            int16_t hC1;
+            int16_t hC2;
+            STO_PLL_GetObserverGains(stoPLLSensor[motorID], &hC1, &hC2);
+            STO_PLL_SetObserverGains(stoPLLSensor[motorID], hC1, (int16_t)regdata16);
+            break;
+          }
+
+          case MC_REG_STOPLL_KI:
+          {
+            PID_SetKI (&stoPLLSensor[motorID]->PIRegulator, (int16_t)regdata16);
+            break;
+          }
+
+          case MC_REG_STOPLL_KP:
+          {
+            PID_SetKP (&stoPLLSensor[motorID]->PIRegulator, (int16_t)regdata16);
+            break;
+          }
+          case MC_REG_STOPLL_EL_ANGLE:
+          case MC_REG_STOPLL_ROT_SPEED:
+          case MC_REG_STOPLL_I_ALPHA:
+          case MC_REG_STOPLL_I_BETA:
+          case MC_REG_STOPLL_BEMF_ALPHA:
+          case MC_REG_STOPLL_BEMF_BETA:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#endif
           case MC_REG_DAC_USER1:
           case MC_REG_DAC_USER2:
             break;
@@ -418,6 +481,24 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             PID_SetKDDivisorPOW2(pPIDPosCtrl[motorID], regdata16);
             break;
           }
+#ifdef OBSERVER_PLL
+          case MC_REG_STOPLL_KI_DIV:
+          {
+            PID_SetKIDivisorPOW2 (&stoPLLSensor[motorID]->PIRegulator,regdata16);
+            break;
+          }
+
+          case MC_REG_STOPLL_KP_DIV:
+          {
+            PID_SetKPDivisorPOW2 (&stoPLLSensor[motorID]->PIRegulator,regdata16);
+            break;
+          }
+#endif
+          case MC_REG_FOC_VDREF:
+          {
+            OL_UpdateVoltage( pOL[motorID], ((regdata16 * 32767) / 100));
+            break;
+          }
 
           default:
           {
@@ -448,6 +529,14 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             MCI_ExecSpeedRamp(pMCIN,((((int16_t)regdata32) * ((int16_t)SPEED_UNIT)) / (int16_t)U_RPM), 0);
             break;
           }
+#ifdef OBSERVER_PLL
+          case MC_REG_STOPLL_EST_BEMF:
+          case MC_REG_STOPLL_OBS_BEMF:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#endif
 
           default:
           {
@@ -783,6 +872,74 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 
+#ifdef OBSERVER_PLL
+            case MC_REG_STOPLL_EL_ANGLE:
+            {
+              //cstat !MISRAC2012-Rule-11.3
+              *regdata16 = SPD_GetElAngle((SpeednPosFdbk_Handle_t *)stoPLLSensor[motorID]);
+              break;
+            }
+
+            case MC_REG_STOPLL_ROT_SPEED:
+            {
+              //cstat !MISRAC2012-Rule-11.3
+              *regdata16 = SPD_GetS16Speed((SpeednPosFdbk_Handle_t *)stoPLLSensor[motorID]);
+              break;
+            }
+            case MC_REG_STOPLL_I_ALPHA:
+            {
+              *regdata16 = STO_PLL_GetEstimatedCurrent(stoPLLSensor[motorID]).alpha;
+              break;
+            }
+
+            case MC_REG_STOPLL_I_BETA:
+            {
+              *regdata16 = STO_PLL_GetEstimatedCurrent(stoPLLSensor[motorID]).beta;
+              break;
+            }
+            case MC_REG_STOPLL_BEMF_ALPHA:
+            {
+              *regdata16 = STO_PLL_GetEstimatedBemf(stoPLLSensor[motorID]).alpha;
+              break;
+            }
+
+            case MC_REG_STOPLL_BEMF_BETA:
+            {
+              *regdata16 = STO_PLL_GetEstimatedBemf(stoPLLSensor[motorID]).beta;
+              break;
+            }
+
+            case MC_REG_STOPLL_C1:
+            {
+              int16_t hC1;
+              int16_t hC2;
+              STO_PLL_GetObserverGains(stoPLLSensor[motorID], &hC1, &hC2);
+              *regdata16 = hC1;
+              break;
+            }
+
+            case MC_REG_STOPLL_C2:
+            {
+              int16_t hC1;
+              int16_t hC2;
+              STO_PLL_GetObserverGains(stoPLLSensor[motorID], &hC1, &hC2);
+              *regdata16 = hC2;
+              break;
+            }
+
+            case MC_REG_STOPLL_KI:
+            {
+              *regdata16 = PID_GetKI (&stoPLLSensor[motorID]->PIRegulator);
+              break;
+            }
+
+            case MC_REG_STOPLL_KP:
+            {
+              *regdata16 = PID_GetKP (&stoPLLSensor[motorID]->PIRegulator);
+              break;
+            }
+#endif
+
             case MC_REG_DAC_USER1:
             case MC_REG_DAC_USER2:
               break;
@@ -875,6 +1032,24 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 
+#ifdef OBSERVER_PLL
+            case MC_REG_STOPLL_KI_DIV:
+            {
+              *regdataU16 = PID_GetKIDivisorPOW2(&stoPLLSensor[motorID]->PIRegulator);
+              break;
+            }
+
+            case MC_REG_STOPLL_KP_DIV:
+            {
+              *regdataU16 = PID_GetKPDivisorPOW2(&stoPLLSensor[motorID]->PIRegulator);
+              break;
+            }
+#endif
+            case MC_REG_FOC_VDREF:
+            {
+	          *regdata16 = ((OL_GetVoltage(pOL[motorID])*100)/32767);
+              break;
+            }
             default:
             {
               retVal = MCP_ERROR_UNKNOWN_REG;
@@ -917,6 +1092,20 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdata32 = (((int32_t)MCI_GetMecSpeedRefUnit(pMCIN) * U_RPM) / SPEED_UNIT);
               break;
             }
+#ifdef OBSERVER_PLL
+            case MC_REG_STOPLL_EST_BEMF:
+            {
+              *regdata32 = STO_PLL_GetEstimatedBemfLevel(stoPLLSensor[motorID]);
+              break;
+            }
+
+            case MC_REG_STOPLL_OBS_BEMF:
+            {
+              *regdata32 = STO_PLL_GetObservedBemfLevel(stoPLLSensor[motorID]);
+              break;
+            }
+#endif
+
             case MC_REG_CURRENT_POSITION:
             {
               FloatToU32 ReadVal;
@@ -1287,6 +1476,38 @@ __weak uint8_t RI_GetPtrReg(uint16_t dataID, void **dataPtr)
             break;
           }
 
+#ifdef OBSERVER_PLL
+#ifdef NOT_IMPLEMENTED  /* Not yet Implemented */
+         stoPLLSensor[vmotorID];
+#endif
+          case MC_REG_STOPLL_ROT_SPEED:
+          {
+            *dataPtr = &(stoPLLSensor[vmotorID]->_Super.hAvrMecSpeedUnit);
+            break;
+          }
+
+          case MC_REG_STOPLL_EL_ANGLE:
+          {
+            *dataPtr = &(stoPLLSensor[vmotorID]->_Super.hElAngle);
+            break;
+          }
+#ifdef NOT_IMPLEMENTED /* Not yet implemented */
+          case MC_REG_STOPLL_I_ALPHA:
+          case MC_REG_STOPLL_I_BETA:
+            break;
+#endif
+          case MC_REG_STOPLL_BEMF_ALPHA:
+          {
+            *dataPtr = &(stoPLLSensor[vmotorID]->hBemf_alfa_est);
+            break;
+          }
+
+          case MC_REG_STOPLL_BEMF_BETA:
+          {
+            *dataPtr = &(stoPLLSensor[vmotorID]->hBemf_beta_est);
+            break;
+          }
+#endif
           default:
           {
             *dataPtr = &nullData16;

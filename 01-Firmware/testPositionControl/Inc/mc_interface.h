@@ -33,6 +33,7 @@ extern "C" {
 #include "pwm_curr_fdbk.h"
 #include "speed_torq_ctrl.h"
 #include "trajectory_ctrl.h"
+#include "virtual_speed_sensor.h"
 /** @addtogroup MCSDK
   * @{
   */
@@ -131,6 +132,7 @@ typedef struct
   SpeednTorqCtrl_Handle_t * pSTC; /*!< Speed and torque controller object used by MCI.*/
   pFOCVars_t pFOCVars;    /*!< Pointer to FOC vars used by MCI.*/
   PWMC_Handle_t *pPWM;    /*!< Pointer to PWM handle structure.*/
+  VirtualSpeedSensor_Handle_t * pVSS;
   PosCtrl_Handle_t * pPosCtrl; /*!< Position Control used by MCI.*/
   MCI_UserCommands_t lastCommand; /*!< Last command coming from the user.*/
   int16_t hFinalSpeed;        /*!< Final speed of last ExecSpeedRamp command.*/
@@ -213,6 +215,9 @@ float MCI_GetTeref_F( MCI_Handle_t * pHandle );
 int16_t MCI_GetPhaseCurrentAmplitude( MCI_Handle_t * pHandle );
 int16_t MCI_GetPhaseVoltageAmplitude( MCI_Handle_t * pHandle );
 void MCI_Clear_Iqdref( MCI_Handle_t * pHandle );
+void MCI_SetSpeedMode( MCI_Handle_t * pHandle );
+void MCI_SetOpenLoopCurrent( MCI_Handle_t * pHandle );
+void MCI_SetOpenLoopVoltage( MCI_Handle_t * pHandle );
 /**
   * @}
   */

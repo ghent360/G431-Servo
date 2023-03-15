@@ -67,6 +67,7 @@ static PWMC_Handle_t *pwmcHandle[NBR_OF_MOTORS];
 //cstat !MISRAC2012-Rule-8.9_a
 static RampExtMngr_Handle_t *pREMNG[NBR_OF_MOTORS];   /*!< Ramp manager used to modify the Iq ref
                                                     during the start-up switch over.*/
+OpenLoop_Handle_t *pOpenLoop[1] = {MC_NULL};          /* only if M1 has OPEN LOOP */
 
 static uint16_t hMFTaskCounterM1 = 0; //cstat !MISRAC2012-Rule-8.9_a
 static volatile uint16_t hBootCapDelayCounterM1 = ((uint16_t)0);
@@ -161,6 +162,13 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     /******************************************************/
     STC_Init(pSTC[M1],&PIDSpeedHandle_M1, &ENCODER_M1._Super);
 
+#ifdef OBSERVER_PLL
+    /******************************************************/
+    /*   Auxiliary speed sensor component initialization  */
+    /******************************************************/
+    STO_PLL_Init (&STO_PLL_M1);
+#endif
+
     /****************************************************/
     /*   Virtual speed sensor component initialization  */
     /****************************************************/
@@ -188,6 +196,9 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     /*******************************************************/
     NTC_Init(&TempSensor_M1);
 
+    OL_Init(&OpenLoop_ParamsM1, &VirtualSpeedSensorM1);     /* only if M1 has open loop */
+    pOpenLoop[M1] = &OpenLoop_ParamsM1;
+
     pREMNG[M1] = &RampExtMngrHFParamsM1;
     REMNG_Init(pREMNG[M1]);
 
@@ -196,6 +207,8 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     FOCVars[M1].Iqdref = STC_GetDefaultIqdref(pSTC[M1]);
     FOCVars[M1].UserIdref = STC_GetDefaultIqdref(pSTC[M1]).d;
     MCI_Init(&Mci[M1], pSTC[M1], &FOCVars[M1], pPosCtrl[M1], pwmcHandle[M1]);
+    Mci[M1].pVSS =  &VirtualSpeedSensorM1;
+    MCI_SetSpeedMode(&Mci[M1]);
     MCI_ExecSpeedRamp(&Mci[M1],
     STC_GetMecSpeedRefUnitDefault(pSTC[M1]),0); /*First command to STC*/
     pMCIList[M1] = &Mci[M1];
@@ -344,6 +357,12 @@ __weak void TSK_MediumFrequencyTaskM1(void)
   /* USER CODE END MediumFrequencyTask M1 0 */
 
   int16_t wAux = 0;
+  MC_ControlMode_t mode;
+
+  mode = MCI_GetControlMode( &Mci[M1] );
+#ifdef OBSERVER_PLL
+  (void)STO_PLL_CalcAvrgMecSpeedUnit(&STO_PLL_M1, &wAux);
+#endif
   (void)ENC_CalcAvrgMecSpeedUnit(&ENCODER_M1, &wAux);
   PQD_CalcElMotorPower(pMPM[M1]);
 
@@ -429,6 +448,9 @@ __weak void TSK_MediumFrequencyTaskM1(void)
               FOCVars[M1].bDriveInput = EXTERNAL;
               STC_SetSpeedSensor( pSTC[M1], &VirtualSpeedSensorM1._Super );
               ENC_Clear(&ENCODER_M1);
+#ifdef OBSERVER_PLL
+              STO_PLL_Clear(&STO_PLL_M1);
+#endif
               FOC_Clear( M1 );
 
               if (EAC_IsAligned(&EncAlignCtrlM1) == false )
@@ -507,8 +529,19 @@ __weak void TSK_MediumFrequencyTaskM1(void)
             TC_PositionRegulation(pPosCtrl[M1]);
 
             MCI_ExecBufferedCommands(&Mci[M1]);
+            if ( mode != MCM_OPEN_LOOP_VOLTAGE_MODE && mode != MCM_OPEN_LOOP_CURRENT_MODE)
+            {
 
               FOC_CalcCurrRef(M1);
+
+            }
+            else
+            {
+              int16_t hForcedMecSpeedUnit;
+              /* Open Loop */
+              VSS_CalcAvrgMecSpeedUnit( &VirtualSpeedSensorM1, &hForcedMecSpeedUnit );
+     	      OL_Calc( pOpenLoop[M1] );
+            }
 
           }
           break;
@@ -613,6 +646,9 @@ __weak void FOC_Clear(uint8_t bMotor)
   /* USER CODE BEGIN FOC_Clear 0 */
 
   /* USER CODE END FOC_Clear 0 */
+  MC_ControlMode_t mode;
+
+  mode = MCI_GetControlMode( &Mci[bMotor] );
 
   ab_t NULL_ab = {((int16_t)0), ((int16_t)0)};
   qd_t NULL_qd = {((int16_t)0), ((int16_t)0)};
@@ -621,6 +657,7 @@ __weak void FOC_Clear(uint8_t bMotor)
   FOCVars[bMotor].Iab = NULL_ab;
   FOCVars[bMotor].Ialphabeta = NULL_alphabeta;
   FOCVars[bMotor].Iqd = NULL_qd;
+  if ( mode != MCM_OPEN_LOOP_VOLTAGE_MODE && mode != MCM_OPEN_LOOP_CURRENT_MODE)
   {
     FOCVars[bMotor].Iqdref = NULL_qd;
   }
@@ -677,7 +714,10 @@ __weak void FOC_CalcCurrRef(uint8_t bMotor)
   /* USER CODE BEGIN FOC_CalcCurrRef 0 */
 
   /* USER CODE END FOC_CalcCurrRef 0 */
-  if (INTERNAL == FOCVars[bMotor].bDriveInput)
+  MC_ControlMode_t mode;
+
+  mode = MCI_GetControlMode( &Mci[bMotor] );
+  if (INTERNAL == FOCVars[bMotor].bDriveInput &&  (mode != MCM_OPEN_LOOP_VOLTAGE_MODE && mode != MCM_OPEN_LOOP_CURRENT_MODE) )
   {
     FOCVars[bMotor].hTeref = STC_CalcTorqueReference(pSTC[bMotor]);
     FOCVars[bMotor].Iqdref.q = FOCVars[bMotor].hTeref;
@@ -770,6 +810,11 @@ __weak uint8_t TSK_HighFrequencyTask(void)
 
   uint16_t hFOCreturn;
   uint8_t bMotorNbr = 0;
+#ifdef OBSERVER_PLL
+
+  Observer_Inputs_t STO_aux_Inputs; /*  only if sensorless aux*/
+  STO_aux_Inputs.Valfa_beta = FOCVars[M1].Valphabeta;  /* only if sensorless*/
+#endif
 
   (void)ENC_CalcAngle(&ENCODER_M1);   /* if not sensorless then 2nd parameter is MC_NULL*/
 
@@ -786,6 +831,17 @@ __weak uint8_t TSK_HighFrequencyTask(void)
   }
   else
   {
+#ifdef OBSERVER_PLL
+    if((uint16_t)RUN == Mci[M1].State)
+    {
+      int16_t hObsAngle = SPD_GetElAngle(&ENCODER_M1._Super);
+      (void)VSS_CalcElAngle(&VirtualSpeedSensorM1, &hObsAngle);
+    }
+    STO_aux_Inputs.Ialfa_beta = FOCVars[M1].Ialphabeta; /*  only if sensorless*/
+    STO_aux_Inputs.Vbus = VBS_GetAvBusVoltage_d(&(BusVoltageSensor_M1._Super)); /*  only for sensorless*/
+    (void)( void )STO_PLL_CalcElAngle (&STO_PLL_M1, &STO_aux_Inputs);
+	STO_PLL_CalcAvrgElSpeedDpp (&STO_PLL_M1);
+#endif
     /* USER CODE BEGIN HighFrequencyTask SINGLEDRIVE_3 */
 
     /* USER CODE END HighFrequencyTask SINGLEDRIVE_3 */
@@ -831,6 +887,9 @@ inline uint16_t FOC_CurrControllerM1(void)
   int16_t hElAngle;
   uint16_t hCodeError;
   SpeednPosFdbk_Handle_t *speedHandle;
+  MC_ControlMode_t mode;
+
+  mode = MCI_GetControlMode( &Mci[M1] );
   speedHandle = STC_GetSpeedSensor(pSTC[M1]);
   hElAngle = SPD_GetElAngle(speedHandle);
   PWMC_GetPhaseCurrents(pwmcHandle[M1], &Iab);
@@ -840,6 +899,10 @@ inline uint16_t FOC_CurrControllerM1(void)
   Iqd = MCM_Park(Ialphabeta, hElAngle);
   Vqd.q = PI_Controller(pPIDIq[M1], (int32_t)(FOCVars[M1].Iqdref.q) - Iqd.q);
   Vqd.d = PI_Controller(pPIDId[M1], (int32_t)(FOCVars[M1].Iqdref.d) - Iqd.d);
+  if (mode == MCM_OPEN_LOOP_VOLTAGE_MODE)
+  {
+    Vqd = OL_VqdConditioning(pOpenLoop[M1]);
+  }
   Vqd = Circle_Limitation(&CircleLimitationM1, Vqd);
   hElAngle += SPD_GetInstElSpeedDpp(speedHandle)*REV_PARK_ANGLE_COMPENSATION_FACTOR;
   Valphabeta = MCM_Rev_Park(Vqd, hElAngle);
@@ -999,6 +1062,7 @@ LL_GPIO_LockPin(M1_OPAMP2_OUT_GPIO_Port, M1_OPAMP2_OUT_Pin);
 LL_GPIO_LockPin(M1_OPAMP2_INT_GAIN_GPIO_Port, M1_OPAMP2_INT_GAIN_Pin);
 LL_GPIO_LockPin(M1_ENCODER_A_GPIO_Port, M1_ENCODER_A_Pin);
 LL_GPIO_LockPin(M1_ENCODER_B_GPIO_Port, M1_ENCODER_B_Pin);
+LL_GPIO_LockPin(M1_PWM_INPUT_GPIO_Port, M1_PWM_INPUT_Pin);
 LL_GPIO_LockPin(M1_PWM_UH_GPIO_Port, M1_PWM_UH_Pin);
 LL_GPIO_LockPin(M1_PWM_VH_GPIO_Port, M1_PWM_VH_Pin);
 LL_GPIO_LockPin(M1_PWM_WH_GPIO_Port, M1_PWM_WH_Pin);
