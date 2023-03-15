@@ -34,6 +34,9 @@
 #ifdef FEED_FORWARD
 #include "feed_forward_ctrl.h"
 #endif
+#ifdef FLUX_WEAKENING
+#include "flux_weakening_ctrl.h"
+#endif
 #include "trajectory_ctrl.h"
 #include "pqd_motor_power_measurement.h"
 
@@ -65,6 +68,10 @@ extern PID_Handle_t PIDSpeedHandle_M1;
 extern PID_Handle_t PIDIqHandle_M1;
 extern PID_Handle_t PIDIdHandle_M1;
 extern NTC_Handle_t TempSensor_M1;
+#ifdef FLUX_WEAKENING
+extern PID_Handle_t PIDFluxWeakeningHandle_M1;
+extern FW_Handle_t FW_M1;
+#endif
 extern PID_Handle_t PID_PosParamsM1;
 extern PosCtrl_Handle_t PosCtrlM1;
 
@@ -97,6 +104,9 @@ extern PID_Handle_t *pPIDId[NBR_OF_MOTORS];
 extern NTC_Handle_t *pTemperatureSensor[NBR_OF_MOTORS];
 extern PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS];
 extern PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS];
+#ifdef FLUX_WEAKENING
+extern FW_Handle_t *pFW[NBR_OF_MOTORS];
+#endif
 #ifdef FEED_FORWARD
 extern FF_Handle_t *pFF[NBR_OF_MOTORS];
 #endif

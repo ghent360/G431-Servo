@@ -35,6 +35,9 @@ static STO_CR_Handle_t * stoCRSensor [NBR_OF_MOTORS] = { &STO_CR_M1 };
 #endif
 static PID_Handle_t *pPIDSpeed[NBR_OF_MOTORS] = { &PIDSpeedHandle_M1 };
 PID_Handle_t *pPIDPosCtrl[NBR_OF_MOTORS] = { &PID_PosParamsM1 };
+#ifdef FLUX_WEAKENING
+static PID_Handle_t *pPIDFW[NBR_OF_MOTORS] = { &PIDFluxWeakeningHandle_M1};
+#endif
 static OpenLoop_Handle_t *pOL[NBR_OF_MOTORS] = { &OpenLoop_ParamsM1};
 static ENCODER_Handle_t *pEncoder[NBR_OF_MOTORS] = {&ENCODER_M1};
 
@@ -304,6 +307,26 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             break;
           }
 
+#ifdef FLUX_WEAKENING
+          case MC_REG_FLUXWK_KP:
+          {
+            PID_SetKP(pPIDFW[motorID], (int16_t)regdata16);
+            break;
+          }
+
+          case MC_REG_FLUXWK_KI:
+          {
+            PID_SetKI(pPIDFW[motorID], (int16_t)regdata16);
+            break;
+          }
+
+          case MC_REG_FLUXWK_BUS:
+          {
+            FW_SetVref(pFW[motorID], regdata16);
+            break;
+          }
+#endif
+
           case MC_REG_BUS_VOLTAGE:
           case MC_REG_HEATS_TEMP:
           case MC_REG_MOTOR_POWER:
@@ -542,6 +565,19 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             break;
           }
 
+#ifdef FLUX_WEAKENING
+          case MC_REG_FLUXWK_KP_DIV:
+          {
+            PID_SetKPDivisorPOW2 (pPIDFW[motorID],regdata16);
+            break;
+          }
+
+          case MC_REG_FLUXWK_KI_DIV:
+          {
+            PID_SetKIDivisorPOW2 (pPIDFW[motorID],regdata16);
+            break;
+          }
+#endif
           default:
           {
             retVal = MCP_ERROR_UNKNOWN_REG;
@@ -845,6 +881,32 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdata16 = PID_GetKD(pPIDId[motorID]);
               break;
             }
+#ifdef FLUX_WEAKENING
+            case MC_REG_FLUXWK_KP:
+            {
+              *regdata16 = PID_GetKP(pPIDFW[motorID]);
+              break;
+            }
+
+            case MC_REG_FLUXWK_KI:
+            {
+              *regdata16 = PID_GetKI(pPIDFW[motorID]);
+              break;
+            }
+
+            case MC_REG_FLUXWK_BUS:
+            {
+              *regdataU16 = FW_GetVref(pFW[motorID]);
+              break;
+            }
+
+            case MC_REG_FLUXWK_BUS_MEAS:
+            {
+              *regdata16 = (int16_t)FW_GetAvVPercentage(pFW[motorID]);
+              break;
+            }
+#endif
+
             case MC_REG_BUS_VOLTAGE:
             {
               *regdataU16 = VBS_GetAvBusVoltage_V(BusVoltageSensor[motorID]);
@@ -1205,6 +1267,19 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
 	          *regdata16 = ((OL_GetVoltage(pOL[motorID])*100)/32767);
               break;
             }
+#ifdef FLUX_WEAKENING
+            case MC_REG_FLUXWK_KP_DIV:
+            {
+              *regdataU16 = PID_GetKPDivisorPOW2(pPIDFW[motorID]);
+              break;
+            }
+
+            case MC_REG_FLUXWK_KI_DIV:
+            {
+              *regdataU16 = PID_GetKIDivisorPOW2(pPIDFW[motorID]);
+              break;
+            }
+#endif
             default:
             {
               retVal = MCP_ERROR_UNKNOWN_REG;

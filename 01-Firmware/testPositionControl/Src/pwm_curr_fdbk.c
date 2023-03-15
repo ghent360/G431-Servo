@@ -228,6 +228,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
         wTimePhB = wTimePhA + (wZ / 131072);
         wTimePhC = wTimePhA - (wY / 131072) ;
 
+#ifdef DISC_PWM
+        if(pHandle->DPWM_Mode == true)
+        {
+          wTimePhA -= wTimePhB;
+          wTimePhC -= wTimePhB;
+          pHandle->HighDutyStored = (uint16_t)wTimePhB;
+          wTimePhB  = 0;
+        }
+        else
+        {
+          /* Nothing to do */
+        }
+#endif
+
         pHandle->lowDuty = (uint16_t)wTimePhC;
         pHandle->midDuty = (uint16_t)wTimePhA;
         pHandle->highDuty = (uint16_t)wTimePhB;
@@ -240,6 +254,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
           wTimePhB = wTimePhA + (wZ / 131072);
           wTimePhC = wTimePhB - (wX / 131072);
 
+#ifdef DISC_PWM
+          if(pHandle->DPWM_Mode == true)
+          {
+            wTimePhB -= wTimePhA;
+            wTimePhC -= wTimePhA;
+            pHandle->HighDutyStored = (uint16_t)wTimePhA;
+            wTimePhA = 0;
+          }
+          else
+          {
+            /* Nothing to do */
+          }
+#endif
+
           pHandle->lowDuty = (uint16_t)wTimePhC;
           pHandle->midDuty = (uint16_t)wTimePhB;
           pHandle->highDuty = (uint16_t)wTimePhA;
@@ -250,6 +278,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
           wTimePhA = (((int32_t )pHandle->PWMperiod) / 4)+ ((wY - wX) / (int32_t)262144);
           wTimePhC = wTimePhA - (wY / 131072);
           wTimePhB = wTimePhC + (wX / 131072);
+
+#ifdef DISC_PWM
+          if(pHandle->DPWM_Mode == true)
+          {
+            wTimePhB -= wTimePhA;
+            wTimePhC -= wTimePhA;
+            pHandle->HighDutyStored = (uint16_t)wTimePhA;
+            wTimePhA = 0;
+          }
+          else
+          {
+            /* Nothing to do */
+          }
+#endif
 
           pHandle->lowDuty = (uint16_t)wTimePhB;
           pHandle->midDuty = (uint16_t)wTimePhC;
@@ -265,6 +307,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
         wTimePhB = wTimePhA + (wZ / 131072);
         wTimePhC = wTimePhA - (wY / 131072);
 
+#ifdef DISC_PWM
+        if(pHandle->DPWM_Mode == true)
+        {
+          wTimePhA -= wTimePhC;
+          wTimePhB -= wTimePhC;
+          pHandle->HighDutyStored = (uint16_t)wTimePhC;
+          wTimePhC = 0;
+        }
+        else
+        {
+          /* Nothing to do */
+        }
+#endif
+
         pHandle->lowDuty = (uint16_t)wTimePhB;
         pHandle->midDuty = (uint16_t)wTimePhA;
         pHandle->highDuty = (uint16_t)wTimePhC;
@@ -277,6 +333,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
           wTimePhC = wTimePhA - (wY / 131072);
           wTimePhB = wTimePhC + (wX / 131072);
 
+#ifdef DISC_PWM
+          if(pHandle->DPWM_Mode == true)
+          {
+            wTimePhA -= wTimePhB;
+            wTimePhC -= wTimePhB;
+            pHandle->HighDutyStored = (uint16_t)wTimePhB;
+            wTimePhB = 0;
+          }
+          else
+          {
+            /* Nothing to do */
+          }
+#endif
+
           pHandle->lowDuty = (uint16_t)wTimePhA;
           pHandle->midDuty = (uint16_t)wTimePhC;
           pHandle->highDuty = (uint16_t)wTimePhB;
@@ -287,6 +357,20 @@ __weak uint16_t PWMC_SetPhaseVoltage(PWMC_Handle_t *pHandle, alphabeta_t Valfa_b
           wTimePhA = (((int32_t)pHandle->PWMperiod) / 4)+ ((wX - wZ) / (int32_t)262144);
           wTimePhB = wTimePhA + (wZ / 131072);
           wTimePhC = wTimePhB - (wX / 131072);
+
+#ifdef DISC_PWM
+          if(pHandle->DPWM_Mode == true)
+          {
+            wTimePhA -= wTimePhC;
+            wTimePhB -= wTimePhC;
+            pHandle->HighDutyStored = (uint16_t)wTimePhC;
+            wTimePhC = 0;
+          }
+          else
+          {
+            /* nothing to do */
+          }
+#endif
 
           pHandle->lowDuty = (uint16_t)wTimePhA;
           pHandle->midDuty = (uint16_t)wTimePhB;

@@ -159,7 +159,7 @@
 #define M1_TEMP_SW_FILTER_BW_FACTOR      250u
 
 /* USER CODE END temperature */
-#ifdef FEED_FORWARD
+#if defined(FEED_FORWARD) || defined(FLUX_WEAKENING)
 /* Flux Weakening - Feed forward */
 #define M1_VQD_SW_FILTER_BW_FACTOR       128u
 #define M1_VQD_SW_FILTER_BW_FACTOR_LOG LOG2(M1_VQD_SW_FILTER_BW_FACTOR)
@@ -175,6 +175,9 @@
 
 /* Motor 1 settings */
 #define FW_ENABLE
+#ifdef FLUX_WEAKENING
+#define UI_CFGOPT_FW
+#endif
 
 #define DIFFTERM_ENABLE
 

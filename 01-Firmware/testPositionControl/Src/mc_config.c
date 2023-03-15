@@ -103,6 +103,41 @@ PID_Handle_t PIDIdHandle_M1 =
   .hKdDivisorPOW2       = 0x0000U,
 };
 
+#ifdef FLUX_WEAKENING
+/**
+  * @brief  FluxWeakeningCtrl component parameters Motor 1
+  */
+FW_Handle_t FW_M1 =
+{
+  .hMaxModule             = MAX_MODULE,
+  .hDefaultFW_V_Ref       = (int16_t)FW_VOLTAGE_REF,
+  .hDemagCurrent          = ID_DEMAG,
+  .wNominalSqCurr         = ((int32_t)NOMINAL_CURRENT*(int32_t)NOMINAL_CURRENT),
+  .hVqdLowPassFilterBW    = M1_VQD_SW_FILTER_BW_FACTOR,
+  .hVqdLowPassFilterBWLOG = M1_VQD_SW_FILTER_BW_FACTOR_LOG
+};
+
+/**
+  * @brief  PI Flux Weakening control parameters Motor 1
+  */
+PID_Handle_t PIDFluxWeakeningHandle_M1 =
+{
+  .hDefKpGain          = (int16_t)FW_KP_GAIN,
+  .hDefKiGain          = (int16_t)FW_KI_GAIN,
+  .wUpperIntegralLimit = 0,
+  .wLowerIntegralLimit = (int32_t)(-NOMINAL_CURRENT) * (int32_t)FW_KIDIV,
+  .hUpperOutputLimit       = 0,
+  .hLowerOutputLimit       = -INT16_MAX,
+  .hKpDivisor          = (uint16_t)FW_KPDIV,
+  .hKiDivisor          = (uint16_t)FW_KIDIV,
+  .hKpDivisorPOW2      = (uint16_t)FW_KPDIV_LOG,
+  .hKiDivisorPOW2      = (uint16_t)FW_KIDIV_LOG,
+  .hDefKdGain           = 0x0000U,
+  .hKdDivisor           = 0x0000U,
+  .hKdDivisorPOW2       = 0x0000U,
+};
+#endif
+
 #ifdef FEED_FORWARD
 /**
   * @brief  FeedForwardCtrl parameters Motor 1
@@ -437,7 +472,11 @@ RampExtMngr_Handle_t RampExtMngrHFParamsM1 =
 CircleLimitation_Handle_t CircleLimitationM1 =
 {
   .MaxModule          = MAX_MODULE,
+#ifdef FLUX_WEAKENING
+  .MaxVd          	  = (uint16_t)(MAX_MODULE * FW_VOLTAGE_REF / 1000),
+#else
   .MaxVd          	  = (uint16_t)(MAX_MODULE * 950 / 1000),
+#endif
 };
 
 MCI_Handle_t Mci[NBR_OF_MOTORS];
@@ -447,6 +486,9 @@ PID_Handle_t *pPIDIq[NBR_OF_MOTORS] = {&PIDIqHandle_M1};
 PID_Handle_t *pPIDId[NBR_OF_MOTORS] = {&PIDIdHandle_M1};
 PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS] = {&PQD_MotorPowMeasM1};
 PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS] = {&PosCtrlM1};
+#ifdef FLUX_WEAKENING
+FW_Handle_t *pFW[NBR_OF_MOTORS] = {&FW_M1};
+#endif
 #ifdef FEED_FORWARD
 FF_Handle_t *pFF[NBR_OF_MOTORS] = {&FF_M1};
 #endif

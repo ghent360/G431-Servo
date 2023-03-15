@@ -198,6 +198,14 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     /*******************************************************/
     NTC_Init(&TempSensor_M1);
 
+#ifdef FLUX_WEAKENING
+    /*******************************************************/
+    /*   Flux weakening component initialization           */
+    /*******************************************************/
+    PID_HandleInit(&PIDFluxWeakeningHandle_M1);
+    FW_Init(pFW[M1],&PIDSpeedHandle_M1,&PIDFluxWeakeningHandle_M1);
+#endif
+
 #ifdef FEED_FORWARD
     /*******************************************************/
     /*   Feed forward component initialization             */
@@ -275,6 +283,10 @@ void TSK_MF_StopProcessing(  MCI_Handle_t * pHandle, uint8_t motor)
 
   FOC_Clear(motor);
   PQD_Clear(pMPM[motor]);
+#ifdef DISC_PWM
+  /* Disable DPWM mode */
+  PWMC_DPWM_ModeDisable( pwmcHandle[motor] );
+#endif
   TSK_SetStopPermanencyTimeM1(STOPPERMANENCY_TICKS);
   Mci[motor].State = STOP;
   return;
@@ -463,6 +475,10 @@ __weak void TSK_MediumFrequencyTaskM1(void)
               STO_PLL_Clear(&STO_PLL_M1);
 #elif defined(OBSERVER_CORDIC)
               STO_CR_Clear(&STO_CR_M1);
+#endif
+#ifdef DISC_PWM
+              /* Enable DPWM mode before Start */
+              PWMC_DPWM_ModeEnable( pwmcHandle[M1] );
 #endif
               FOC_Clear( M1 );
 
@@ -686,6 +702,16 @@ __weak void FOC_Clear(uint8_t bMotor)
 
   PWMC_SwitchOffPWM(pwmcHandle[bMotor]);
 
+#ifdef FLUX_WEAKENING
+  if (NULL == pFW[bMotor])
+  {
+    /* Nothing to do */
+  }
+  else
+  {
+    FW_Clear(pFW[bMotor]);
+  }
+#endif
 #ifdef FEED_FORWARD
   if (NULL == pFF[bMotor])
   {
@@ -744,6 +770,9 @@ __weak void FOC_InitAdditionalMethods(uint8_t bMotor) //cstat !RED-func-no-effec
   */
 __weak void FOC_CalcCurrRef(uint8_t bMotor)
 {
+#ifdef FLUX_WEAKENING
+  qd_t IqdTmp;
+#endif
 
   /* USER CODE BEGIN FOC_CalcCurrRef 0 */
 
@@ -756,6 +785,18 @@ __weak void FOC_CalcCurrRef(uint8_t bMotor)
     FOCVars[bMotor].hTeref = STC_CalcTorqueReference(pSTC[bMotor]);
     FOCVars[bMotor].Iqdref.q = FOCVars[bMotor].hTeref;
 
+#ifdef FLUX_WEAKENING
+    if (NULL == pFW[bMotor])
+    {
+      /* Nothing to do */
+    }
+    else
+    {
+      IqdTmp.q = FOCVars[bMotor].Iqdref.q;
+      IqdTmp.d = FOCVars[bMotor].UserIdref;
+      FOCVars[bMotor].Iqdref = FW_CalcCurrRef(pFW[bMotor], IqdTmp);
+    }
+#endif
 #ifdef FEED_FORWARD
     if (NULL == pFF[bMotor])
     {
@@ -966,6 +1007,10 @@ inline uint16_t FOC_CurrControllerM1(void)
   FOCVars[M1].Iqd = Iqd;
   FOCVars[M1].Valphabeta = Valphabeta;
   FOCVars[M1].hElAngle = hElAngle;
+
+#ifdef FLUX_WEAKENING
+  FW_DataProcess(pFW[M1], Vqd);
+#endif
 
 #ifdef FEED_FORWARD
   FF_DataProcess(pFF[M1]);
