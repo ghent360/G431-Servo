@@ -127,6 +127,8 @@ typedef struct
 #define PRIM_SENSOR_M1  EENCODER
 #ifdef OBSERVER_PLL
 #define AUX_SENSOR_M1  EPLL
+#elif defined(OBSERVER_CORDIC)
+#define AUX_SENSOR_M1  ECORDIC
 #else
 #define AUX_SENSOR_M1  ENO_SENSOR
 #endif

@@ -46,9 +46,13 @@
 #include "ramp_ext_mngr.h"
 #include "circle_limitation.h"
 
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CODRIC)
 #include "sto_speed_pos_fdbk.h"
+#endif
+#ifdef OBSERVER_PLL
 #include "sto_pll_speed_pos_fdbk.h"
+#elif defined(OBSERVER_CORDIC)
+#include "sto_cordic_speed_pos_fdbk.h"
 #endif
 /* USER CODE BEGIN Additional include */
 
@@ -69,6 +73,9 @@ extern PQD_MotorPowMeas_Handle_t *pPQD_MotorPowMeasM1;
 extern VirtualSpeedSensor_Handle_t VirtualSpeedSensorM1;
 #ifdef OBSERVER_PLL
 extern STO_PLL_Handle_t STO_PLL_M1;
+#endif
+#ifdef OBSERVER_CORDIC
+extern STO_CR_Handle_t STO_CR_M1;
 #endif
 extern ENCODER_Handle_t ENCODER_M1;
 extern EncAlign_Handle_t EncAlignCtrlM1;

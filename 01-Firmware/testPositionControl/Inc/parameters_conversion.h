@@ -55,7 +55,7 @@
 #define SERIALCOM_TIMEOUT_OCCURENCE_TICKS (SYS_TICK_FREQUENCY/SERIAL_COM_TIMEOUT_INVERSE)-1u
 #define SERIALCOM_ATR_TIME_TICKS          (uint16_t)(((SYS_TICK_FREQUENCY * SERIAL_COM_ATR_TIME_MS) / 1000u) - 1u)
 
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
 /************************* COMMON OBSERVER PARAMETERS **************************/
 #define MAX_BEMF_VOLTAGE  (uint16_t)((MAX_APPLICATION_SPEED_RPM * 1.2 *\
                            MOTOR_VOLTAGE_CONSTANT*SQRT_2)/(1000u*SQRT_3))
@@ -79,6 +79,17 @@
 
 #define PERCENTAGE_FACTOR    (uint16_t)(VARIANCE_THRESHOLD*128u)
 #define HFI_MINIMUM_SPEED    (uint16_t) (HFI_MINIMUM_SPEED_RPM/6u)
+#endif
+#ifdef OBSERVER_CORDIC
+/*********************** OBSERVER + CORDIC PARAMETERS *************************/
+#define CORD_C1 (int32_t)((((int16_t)CORD_F1)*RS)/(LS*TF_REGULATION_RATE))
+#define CORD_C2 (int32_t) CORD_GAIN1
+#define CORD_C3 (int32_t)((((int16_t)CORD_F1)*MAX_BEMF_VOLTAGE)/(LS*MAX_CURRENT\
+                                                           *TF_REGULATION_RATE))
+#define CORD_C4 (int32_t) CORD_GAIN2
+#define CORD_C5 (int32_t)((((int16_t)CORD_F1)*MAX_VOLTAGE)/(LS*MAX_CURRENT*\
+                                                          TF_REGULATION_RATE))
+#define CORD_PERCENTAGE_FACTOR    (uint16_t)(CORD_VARIANCE_THRESHOLD*128u)
 #endif
 
 #define MAX_APPLICATION_SPEED_UNIT2 ((MAX_APPLICATION_SPEED_RPM2*SPEED_UNIT)/_RPM)
@@ -166,6 +177,8 @@
 
 #ifdef OBSERVER_PLL
 #define AUX_SCFG UI_SCODE_STO_PLL
+#elif defined(OBSERVER_CORDIC)
+#define AUX_SCFG UI_SCODE_STO_CR
 #else
 #define AUX_SCFG 0x0
 #endif

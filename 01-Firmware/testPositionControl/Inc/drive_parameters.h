@@ -76,6 +76,36 @@
                                                             amplitude-speed consistency */
 #define BEMF_CONSISTENCY_GAIN            64   /* Parameter for B-emf
                                                            amplitude-speed consistency */
+
+#elif defined(OBSERVER_CORDIC)
+/****** State Observer + CORDIC ***/
+#define CORD_VARIANCE_THRESHOLD          25 /*!<Maxiumum accepted
+                                                            variance on speed
+                                                            estimates (percentage) */
+#define CORD_F1                          16384
+#define CORD_F2                          4096
+#define CORD_F1_LOG                      LOG2((16384))
+#define CORD_F2_LOG                      LOG2((4096))
+
+/* State observer constants */
+#define CORD_GAIN1                       -23218
+#define CORD_GAIN2                       18593
+
+#define CORD_FIFO_DEPTH_DPP              64  /*!< Depth of the FIFO used
+                                                            to average mechanical speed
+                                                            in dpp format */
+#define CORD_FIFO_DEPTH_DPP_LOG          LOG2((64))
+
+#define CORD_FIFO_DEPTH_UNIT            64  /*!< Depth of the FIFO used
+                                                           to average mechanical speed
+                                                           in dpp format */
+#define CORD_MAX_ACCEL_DPPP              81  /*!< Maximum instantaneous
+                                                              electrical acceleration (dpp
+                                                              per control period) */
+#define CORD_BEMF_CONSISTENCY_TOL        64  /* Parameter for B-emf
+                                                           amplitude-speed consistency */
+#define CORD_BEMF_CONSISTENCY_GAIN       64  /* Parameter for B-emf
+                                                          amplitude-speed consistency */
 #endif
 
 /* USER CODE BEGIN angle reconstruction M1 */
@@ -201,7 +231,7 @@
                                                      applied when frequency is zero. */
 /* USER CODE END OPENLOOP M1 */
 
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
 /* Observer start-up output conditions  */
 #define OBS_MINIMUM_SPEED_RPM          1000
 

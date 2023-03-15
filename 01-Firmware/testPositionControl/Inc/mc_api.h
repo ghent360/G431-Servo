@@ -90,7 +90,7 @@ int16_t MC_GetMecSpeedAverageMotor1(void);
 /* Returns the last computed average mechanical rotor speed for Motor 1, expressed in rpm */
 //float MC_GetAverageMecSpeedMotor1_F(void);
 
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
 /* Returns the last computed average mechanical rotor speed from auxiliary sensor for Motor 1, expressed in the unit defined by #SPEED_UNIT */
 int16_t MC_GetMecAuxiliarySpeedAverageMotor1(void);
 

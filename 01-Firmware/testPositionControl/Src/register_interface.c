@@ -30,6 +30,8 @@
 
 #ifdef OBSERVER_PLL
 static STO_PLL_Handle_t * stoPLLSensor [NBR_OF_MOTORS] = { &STO_PLL_M1 };
+#elif defined(OBSERVER_CORDIC)
+static STO_CR_Handle_t * stoCRSensor [NBR_OF_MOTORS] = { &STO_CR_M1 };
 #endif
 static PID_Handle_t *pPIDSpeed[NBR_OF_MOTORS] = { &PIDSpeedHandle_M1 };
 PID_Handle_t *pPIDPosCtrl[NBR_OF_MOTORS] = { &PID_PosParamsM1 };
@@ -389,7 +391,35 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             retVal = MCP_ERROR_RO_REG;
             break;
           }
+#elif defined(OBSERVER_CORDIC)
+          case MC_REG_STOCORDIC_EL_ANGLE:
+          case MC_REG_STOCORDIC_ROT_SPEED:
+          case MC_REG_STOCORDIC_I_ALPHA:
+          case MC_REG_STOCORDIC_I_BETA:
+          case MC_REG_STOCORDIC_BEMF_ALPHA:
+          case MC_REG_STOCORDIC_BEMF_BETA:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+
+          case MC_REG_STOCORDIC_C1:
+          {
+            int16_t hC1,hC2;
+            STO_CR_GetObserverGains(stoCRSensor[motorID], &hC1,&hC2);
+            STO_CR_SetObserverGains(stoCRSensor[motorID], (int16_t)regdata16, hC2);
+             break;
+          }
+
+          case MC_REG_STOCORDIC_C2:
+          {
+            int16_t hC1,hC2;
+            STO_CR_GetObserverGains(stoCRSensor[motorID], &hC1, &hC2);
+            STO_CR_SetObserverGains(stoCRSensor[motorID], hC1, (int16_t)regdata16);
+            break;
+          }
 #endif
+
           case MC_REG_DAC_USER1:
           case MC_REG_DAC_USER2:
             break;
@@ -532,6 +562,13 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
 #ifdef OBSERVER_PLL
           case MC_REG_STOPLL_EST_BEMF:
           case MC_REG_STOPLL_OBS_BEMF:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#elif defined(OBSERVER_CORDIC)
+          case MC_REG_STOCORDIC_EST_BEMF:
+          case MC_REG_STOCORDIC_OBS_BEMF:
           {
             retVal = MCP_ERROR_RO_REG;
             break;
@@ -938,6 +975,67 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdata16 = PID_GetKP (&stoPLLSensor[motorID]->PIRegulator);
               break;
             }
+#elif defined(OBSERVER_CORDIC)
+            case MC_REG_STOCORDIC_EL_ANGLE:
+            {
+              if (stoCRSensor[motorID] != MC_NULL)
+              {
+                //cstat !MISRAC2012-Rule-11.3
+                *regdata16 = SPD_GetElAngle((SpeednPosFdbk_Handle_t *)stoCRSensor[motorID]);
+              }
+              else
+              {
+                retVal = MCP_ERROR_UNKNOWN_REG;
+              }
+              break;
+            }
+            case MC_REG_STOCORDIC_ROT_SPEED:
+            {
+              //cstat !MISRAC2012-Rule-11.3
+              *regdata16 = SPD_GetS16Speed((SpeednPosFdbk_Handle_t*) stoCRSensor[motorID]);
+              break;
+            }
+
+            case MC_REG_STOCORDIC_I_ALPHA:
+            {
+              *regdata16 = STO_CR_GetEstimatedCurrent(stoCRSensor[motorID]).alpha;
+              break;
+            }
+
+            case MC_REG_STOCORDIC_I_BETA:
+            {
+              *regdata16 = STO_CR_GetEstimatedCurrent(stoCRSensor[motorID]).beta;
+              break;
+            }
+            case MC_REG_STOCORDIC_BEMF_ALPHA:
+            {
+              *regdata16 = STO_CR_GetEstimatedBemf(stoCRSensor[motorID]).alpha;
+              break;
+            }
+
+            case MC_REG_STOCORDIC_BEMF_BETA:
+            {
+              *regdata16 = STO_CR_GetEstimatedBemf(stoCRSensor[motorID]).beta;
+              break;
+            }
+
+            case MC_REG_STOCORDIC_C1:
+            {
+              int16_t hC1;
+              int16_t hC2;
+              STO_CR_GetObserverGains(stoCRSensor[motorID], &hC1, &hC2);
+              *regdata16 = hC1;
+              break;
+            }
+
+            case MC_REG_STOCORDIC_C2:
+            {
+              int16_t hC1;
+              int16_t hC2;
+              STO_CR_GetObserverGains(stoCRSensor[motorID], &hC1, &hC2);
+              *regdata16 = hC2;
+              break;
+            }
 #endif
 
             case MC_REG_DAC_USER1:
@@ -1104,8 +1202,19 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdata32 = STO_PLL_GetObservedBemfLevel(stoPLLSensor[motorID]);
               break;
             }
-#endif
+#elif defined(OBSERVER_CORDIC)
+            case MC_REG_STOCORDIC_EST_BEMF:
+            {
+              *regdata32 = STO_CR_GetEstimatedBemfLevel(stoCRSensor[motorID]);
+              break;
+            }
 
+            case MC_REG_STOCORDIC_OBS_BEMF:
+            {
+              *regdata32 = STO_CR_GetObservedBemfLevel(stoCRSensor[motorID]);
+              break;
+            }
+#endif
             case MC_REG_CURRENT_POSITION:
             {
               FloatToU32 ReadVal;
@@ -1505,6 +1614,34 @@ __weak uint8_t RI_GetPtrReg(uint16_t dataID, void **dataPtr)
           case MC_REG_STOPLL_BEMF_BETA:
           {
             *dataPtr = &(stoPLLSensor[vmotorID]->hBemf_beta_est);
+            break;
+          }
+#elif defined(OBSERVER_CORDIC)
+          case MC_REG_STOCORDIC_ROT_SPEED:
+          {
+            *dataPtr = &(stoCRSensor[vmotorID]->_Super.hAvrMecSpeedUnit);
+            break;
+          }
+
+          case MC_REG_STOCORDIC_EL_ANGLE:
+          {
+            *dataPtr = &(stoCRSensor[vmotorID]->_Super.hElAngle);
+            break;
+          }
+#ifdef NOT_IMPLEMENTED /* Not yet implemented */
+          case MC_REG_STOCORDIC_I_ALPHA:
+          case MC_REG_STOCORDIC_I_BETA:
+            break;
+#endif
+          case MC_REG_STOCORDIC_BEMF_ALPHA:
+          {
+            *dataPtr = &(stoCRSensor[vmotorID]->hBemf_alfa_est);
+            break;
+          }
+
+          case MC_REG_STOCORDIC_BEMF_BETA:
+          {
+            *dataPtr = &(stoCRSensor[vmotorID]->hBemf_beta_est);
             break;
           }
 #endif

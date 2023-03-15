@@ -162,11 +162,13 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     /******************************************************/
     STC_Init(pSTC[M1],&PIDSpeedHandle_M1, &ENCODER_M1._Super);
 
-#ifdef OBSERVER_PLL
     /******************************************************/
     /*   Auxiliary speed sensor component initialization  */
     /******************************************************/
+#ifdef OBSERVER_PLL
     STO_PLL_Init (&STO_PLL_M1);
+#elif defined(OBSERVER_CORDIC)
+    STO_CR_Init (&STO_CR_M1);
 #endif
 
     /****************************************************/
@@ -362,6 +364,8 @@ __weak void TSK_MediumFrequencyTaskM1(void)
   mode = MCI_GetControlMode( &Mci[M1] );
 #ifdef OBSERVER_PLL
   (void)STO_PLL_CalcAvrgMecSpeedUnit(&STO_PLL_M1, &wAux);
+#elif defined(OBSERVER_CORDIC)
+  (void)STO_CR_CalcAvrgMecSpeedUnit(&STO_CR_M1, &wAux);
 #endif
   (void)ENC_CalcAvrgMecSpeedUnit(&ENCODER_M1, &wAux);
   PQD_CalcElMotorPower(pMPM[M1]);
@@ -450,6 +454,8 @@ __weak void TSK_MediumFrequencyTaskM1(void)
               ENC_Clear(&ENCODER_M1);
 #ifdef OBSERVER_PLL
               STO_PLL_Clear(&STO_PLL_M1);
+#elif defined(OBSERVER_CORDIC)
+              STO_CR_Clear(&STO_CR_M1);
 #endif
               FOC_Clear( M1 );
 
@@ -810,7 +816,7 @@ __weak uint8_t TSK_HighFrequencyTask(void)
 
   uint16_t hFOCreturn;
   uint8_t bMotorNbr = 0;
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
 
   Observer_Inputs_t STO_aux_Inputs; /*  only if sensorless aux*/
   STO_aux_Inputs.Valfa_beta = FOCVars[M1].Valphabeta;  /* only if sensorless*/
@@ -831,7 +837,7 @@ __weak uint8_t TSK_HighFrequencyTask(void)
   }
   else
   {
-#ifdef OBSERVER_PLL
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
     if((uint16_t)RUN == Mci[M1].State)
     {
       int16_t hObsAngle = SPD_GetElAngle(&ENCODER_M1._Super);
@@ -839,8 +845,13 @@ __weak uint8_t TSK_HighFrequencyTask(void)
     }
     STO_aux_Inputs.Ialfa_beta = FOCVars[M1].Ialphabeta; /*  only if sensorless*/
     STO_aux_Inputs.Vbus = VBS_GetAvBusVoltage_d(&(BusVoltageSensor_M1._Super)); /*  only for sensorless*/
+#ifdef OBSERVER_PLL
     (void)( void )STO_PLL_CalcElAngle (&STO_PLL_M1, &STO_aux_Inputs);
 	STO_PLL_CalcAvrgElSpeedDpp (&STO_PLL_M1);
+#elif defined(OBSERVER_CORDIC)
+    (void)STO_CR_CalcElAngle (&STO_CR_M1, &STO_aux_Inputs);
+	STO_CR_CalcAvrgElSpeedDpp (&STO_CR_M1);
+#endif
 #endif
     /* USER CODE BEGIN HighFrequencyTask SINGLEDRIVE_3 */
 
