@@ -424,6 +424,17 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
           case MC_REG_DAC_USER2:
             break;
 
+#ifdef FEED_FORWARD
+          case MC_REG_FF_VQ:
+          case MC_REG_FF_VD:
+          case MC_REG_FF_VQ_PIOUT:
+          case MC_REG_FF_VD_PIOUT:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#endif
+
           case MC_REG_POSITION_KP:
           {
             PID_SetKP(pPIDPosCtrl[motorID], regdata16);
@@ -524,6 +535,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             break;
           }
 #endif
+
           case MC_REG_FOC_VDREF:
           {
             OL_UpdateVoltage( pOL[motorID], ((regdata16 * 32767) / 100));
@@ -571,6 +583,25 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
           case MC_REG_STOCORDIC_OBS_BEMF:
           {
             retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#endif
+#ifdef FEED_FORWARD
+          case MC_REG_FF_1Q:
+          {
+            pFF[motorID]->wConstant_1Q = (int32_t)regdata32;
+            break;
+          }
+
+          case MC_REG_FF_1D:
+          {
+            pFF[motorID]->wConstant_1D = (int32_t)regdata32;
+            break;
+          }
+
+          case MC_REG_FF_2:
+          {
+            pFF[motorID]->wConstant_2 = (int32_t)regdata32;
             break;
           }
 #endif
@@ -1042,6 +1073,32 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             case MC_REG_DAC_USER2:
               break;
 
+#ifdef FEED_FORWARD
+            case MC_REG_FF_VQ:
+            {
+              *regdata16 = FF_GetVqdff(pFF[motorID]).q;
+              break;
+            }
+
+            case MC_REG_FF_VD:
+            {
+              *regdata16 = FF_GetVqdff(pFF[motorID]).d;
+              break;
+            }
+
+            case MC_REG_FF_VQ_PIOUT:
+            {
+              *regdata16 = FF_GetVqdAvPIout(pFF[motorID]).q;
+              break;
+            }
+
+            case MC_REG_FF_VD_PIOUT:
+            {
+              *regdata16 = FF_GetVqdAvPIout(pFF[motorID]).d;
+              break;
+            }
+#endif
+
             case MC_REG_POSITION_KP:
             {
               *regdata16 = PID_GetKP( pPIDPosCtrl[motorID]);
@@ -1212,6 +1269,25 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             case MC_REG_STOCORDIC_OBS_BEMF:
             {
               *regdata32 = STO_CR_GetObservedBemfLevel(stoCRSensor[motorID]);
+              break;
+            }
+#endif
+#ifdef FEED_FORWARD
+            case MC_REG_FF_1Q:
+            {
+              *regdata32 = pFF[motorID]->wConstant_1Q;
+              break;
+            }
+
+            case MC_REG_FF_1D:
+            {
+              *regdata32 = pFF[motorID]->wConstant_1D;
+              break;
+            }
+
+            case MC_REG_FF_2:
+            {
+              *regdata32 = pFF[motorID]->wConstant_2;
               break;
             }
 #endif

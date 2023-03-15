@@ -103,6 +103,20 @@ PID_Handle_t PIDIdHandle_M1 =
   .hKdDivisorPOW2       = 0x0000U,
 };
 
+#ifdef FEED_FORWARD
+/**
+  * @brief  FeedForwardCtrl parameters Motor 1
+  */
+FF_Handle_t FF_M1 =
+{
+  .hVqdLowPassFilterBW    = M1_VQD_SW_FILTER_BW_FACTOR,
+  .wDefConstant_1D        = (int32_t)CONSTANT1_D,
+  .wDefConstant_1Q        = (int32_t)CONSTANT1_Q,
+  .wDefConstant_2         = (int32_t)CONSTANT2_QD,
+  .hVqdLowPassFilterBWLOG = M1_VQD_SW_FILTER_BW_FACTOR_LOG
+};
+#endif
+
 PID_Handle_t PID_PosParamsM1 =
 {
   .hDefKpGain          = (int16_t)PID_POSITION_KP_GAIN,
@@ -433,6 +447,9 @@ PID_Handle_t *pPIDIq[NBR_OF_MOTORS] = {&PIDIqHandle_M1};
 PID_Handle_t *pPIDId[NBR_OF_MOTORS] = {&PIDIdHandle_M1};
 PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS] = {&PQD_MotorPowMeasM1};
 PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS] = {&PosCtrlM1};
+#ifdef FEED_FORWARD
+FF_Handle_t *pFF[NBR_OF_MOTORS] = {&FF_M1};
+#endif
 ESC_Handle_t ESC_M1 =
 {
   .pESC_params = &ESC_ParamsM1,

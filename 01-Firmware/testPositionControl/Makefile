@@ -104,6 +104,7 @@ MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/virtual_speed_sensor.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/G4xx/Src/r3_2_g4xx_pwm_curr_fdbk.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/mcp.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/mcpa.c \
+MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/feed_forward_ctrl.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/sto_pll_speed_pos_fdbk.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/sto_cordic_speed_pos_fdbk.c \
 MCSDK_v6.1.1-Full/MotorControl/MCSDK/MCLib/Any/Src/esc.c

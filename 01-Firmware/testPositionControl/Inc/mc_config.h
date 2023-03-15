@@ -31,6 +31,9 @@
 #include "mc_configuration_registers.h"
 #include "r_divider_bus_voltage_sensor.h"
 #include "virtual_bus_voltage_sensor.h"
+#ifdef FEED_FORWARD
+#include "feed_forward_ctrl.h"
+#endif
 #include "trajectory_ctrl.h"
 #include "pqd_motor_power_measurement.h"
 
@@ -82,6 +85,9 @@ extern EncAlign_Handle_t EncAlignCtrlM1;
 extern RDivider_Handle_t BusVoltageSensor_M1;
 extern CircleLimitation_Handle_t CircleLimitationM1;
 extern RampExtMngr_Handle_t RampExtMngrHFParamsM1;
+#ifdef FEED_FORWARD
+extern FF_Handle_t FF_M1;
+#endif
 extern OpenLoop_Handle_t OpenLoop_ParamsM1;
 
 extern MCI_Handle_t Mci[NBR_OF_MOTORS];
@@ -91,6 +97,9 @@ extern PID_Handle_t *pPIDId[NBR_OF_MOTORS];
 extern NTC_Handle_t *pTemperatureSensor[NBR_OF_MOTORS];
 extern PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS];
 extern PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS];
+#ifdef FEED_FORWARD
+extern FF_Handle_t *pFF[NBR_OF_MOTORS];
+#endif
 extern MCI_Handle_t* pMCI[NBR_OF_MOTORS];
 extern ESC_Handle_t ESC_M1;
 /* USER CODE BEGIN Additional extern */
