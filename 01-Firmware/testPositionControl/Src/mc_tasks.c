@@ -480,6 +480,9 @@ __weak void TSK_MediumFrequencyTaskM1(void)
               /* Enable DPWM mode before Start */
               PWMC_DPWM_ModeEnable( pwmcHandle[M1] );
 #endif
+#ifdef OVM_PWM
+              PWMC_Clear(pwmcHandle[M1]);
+#endif
               FOC_Clear( M1 );
 
               if (EAC_IsAligned(&EncAlignCtrlM1) == false )
@@ -999,7 +1002,12 @@ inline uint16_t FOC_CurrControllerM1(void)
   Vqd = Circle_Limitation(&CircleLimitationM1, Vqd);
   hElAngle += SPD_GetInstElSpeedDpp(speedHandle)*REV_PARK_ANGLE_COMPENSATION_FACTOR;
   Valphabeta = MCM_Rev_Park(Vqd, hElAngle);
+#ifdef OVM_PWM
+  hCodeError = PWMC_SetPhaseVoltage_OVM(pwmcHandle[M1], Valphabeta);
+  PWMC_CalcPhaseCurrentsEst(pwmcHandle[M1],Iqd, hElAngle);
+#else
   hCodeError = PWMC_SetPhaseVoltage(pwmcHandle[M1], Valphabeta);
+#endif
 
   FOCVars[M1].Vqd = Vqd;
   FOCVars[M1].Iab = Iab;

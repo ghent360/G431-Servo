@@ -197,8 +197,13 @@ SpeednTorqCtrl_Handle_t SpeednTorqCtrlM1 =
 PWMC_R3_2_Handle_t PWM_Handle_M1=
 {
   {
+#ifdef OVM_PWM
+	    .pFctGetPhaseCurrents              = &R3_2_GetPhaseCurrents_OVM,
+	    .pFctSetADCSampPointSectX          = &R3_2_SetADCSampPointSectX_OVM,
+#else
 	    .pFctGetPhaseCurrents              = &R3_2_GetPhaseCurrents,
 	    .pFctSetADCSampPointSectX          = &R3_2_SetADCSampPointSectX,
+#endif
 	    .pFctSetOffsetCalib                = &R3_2_SetOffsetCalib,
 	    .pFctGetOffsetCalib                = &R3_2_GetOffsetCalib,
 

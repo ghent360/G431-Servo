@@ -129,6 +129,8 @@ typedef struct
 #endif
 #ifdef DISC_PWM
 #define configurationFlag2_M1 (DISCONTINUOUS_PWM_FLAG|DBG_OPEN_LOOP_FLAG)
+#elid defined(OVM_PWM)
+#define configurationFlag2_M1 (OVERMODULATION_FLAG|DBG_OPEN_LOOP_FLAG)
 #else
 #define configurationFlag2_M1 (DBG_OPEN_LOOP_FLAG)
 #endif

@@ -220,8 +220,13 @@
 #define SPD_TIM_M1_IRQHandler TIM4_IRQHandler
 
 #define LPF_FILT_CONST ((int16_t)(32767 * 0.5))
+#ifdef OVM_PWM
+/* MMI Table Motor 1 100% */
+#define MAX_MODULE 32767
+#else
 /* MMI Table Motor 1 MAX_MODULATION_95_PER_CENT */
 #define MAX_MODULE 31128
+#endif
 
 #define SAMPLING_CYCLE_CORRECTION 0.5 /* Add half cycle required by STM32G431CBUx ADC */
 #define LL_ADC_SAMPLINGTIME_1CYCLES_5 LL_ADC_SAMPLINGTIME_1CYCLE_5
