@@ -1,4 +1,4 @@
-﻿/**
+/**
   ******************************************************************************
   * @file    speed_regulator_potentiometer.h
   * @author  Motor Control SDK Team, ST Microelectronics
