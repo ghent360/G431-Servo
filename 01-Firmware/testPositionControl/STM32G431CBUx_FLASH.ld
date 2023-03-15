@@ -53,16 +53,17 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
-/* Generate a link error if heap and stack don't fit into RAM */
-_Min_Heap_Size = 0x200;      /* required amount of heap  */
+_estack = ORIGIN(RAM) + LENGTH(RAM);   /* end of "RAM" Ram type memory */
+
+_Min_Heap_Size = 0x200;  /* required amount of heap */
 _Min_Stack_Size = 0x400; /* required amount of stack */
 
-/* Specify the memory areas */
+/* Memory definition */
 MEMORY
 {
-RAM (xrw)      : ORIGIN = 0x20000000, LENGTH = 32K
-FLASH (rx)      : ORIGIN = 0x8000000, LENGTH = 128K
+  RAM    (xrw) : ORIGIN = 0x20000000, LENGTH = 22K
+  FLASH  (rx)  : ORIGIN = 0x8000000,  LENGTH = 128K
+  CCMRAM (xrw) : ORIGIN = 0x10000000, LENGTH = 8K
 }
 
 /* Define output sections */
@@ -75,6 +76,19 @@ SECTIONS
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH
+
+  /* CCMRAM linker section for code to be run from CCMRAM */
+  _siccmram = LOADADDR(.ccmram);
+  /* CCMRAM section */
+  .ccmram :
+  {
+    . = ALIGN(4);
+    _sccmram = .; /* define a global symbols at ccmram start */
+    *(.ccmram)
+    *(.ccmram*)
+    . = ALIGN(4);
+    _eccmram = .; /* define a global symbols at ccmram end */
+  } >CCMRAM AT> FLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -115,6 +129,7 @@ SECTIONS
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
   } >FLASH
+
   .init_array :
   {
     PROVIDE_HIDDEN (__init_array_start = .);
@@ -122,6 +137,7 @@ SECTIONS
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
   } >FLASH
+
   .fini_array :
   {
     PROVIDE_HIDDEN (__fini_array_start = .);
@@ -140,12 +156,13 @@ SECTIONS
     _sdata = .;        /* create a global symbol at data start */
     *(.data)           /* .data sections */
     *(.data*)          /* .data* sections */
+    *(.RamFunc)        /* .RamFunc sections */
+    *(.RamFunc*)       /* .RamFunc* sections */
 
     . = ALIGN(4);
     _edata = .;        /* define a global symbol at data end */
   } >RAM AT> FLASH
 
-  
   /* Uninitialized data section */
   . = ALIGN(4);
   .bss :
@@ -173,8 +190,6 @@ SECTIONS
     . = ALIGN(8);
   } >RAM
 
-  
-
   /* Remove information from the standard libraries */
   /DISCARD/ :
   {
@@ -185,5 +200,4 @@ SECTIONS
 
   .ARM.attributes 0 : { *(.ARM.attributes) }
 }
-
 

@@ -17,7 +17,7 @@
         <define key="ADC_REFERENCE_VOLTAGE" value="3.3" />
         <define key="CLOCK_FREQUENCY" value="CPU_CLK_170_MHZ" />
         <define key="CPU_CLK_170_MHZ" value="TRUE" />
-        <define key="CCMRAM_ENABLED" value="FALSE" />
+        <define key="CCMRAM_ENABLED" value="TRUE" />
         <define key="DRIVE_TYPE" value="FOC" />
         <define key="MOTOR_NAME" value="x8308" />
         <define key="POWERBOARD_NAME" value="B-G431B-ESC1" />
