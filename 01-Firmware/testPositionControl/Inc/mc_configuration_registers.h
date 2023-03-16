@@ -153,13 +153,13 @@ typedef struct
 #define DRIVE_TYPE_M1  0
 #ifdef SENSORLESS
   #ifdef OBSERVER_PLL
-  #error not implemnted
+    #define PRIM_SENSOR_M1  EPLL
   #elif defined(OBSERVER_CORDIC)
     #define PRIM_SENSOR_M1  ECORDIC
-    #define AUX_SENSOR_M1  EENCODER
   #else
     #error Must define OBSERVER_PLL or OBSERVER_CORDIC
   #endif
+  #define AUX_SENSOR_M1  EENCODER
 #else
   #define PRIM_SENSOR_M1  EENCODER
   #ifdef OBSERVER_PLL

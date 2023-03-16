@@ -152,6 +152,7 @@ FF_Handle_t FF_M1 =
 };
 #endif
 
+#ifndef SPD_CTRL
 PID_Handle_t PID_PosParamsM1 =
 {
   .hDefKpGain          = (int16_t)PID_POSITION_KP_GAIN,
@@ -175,6 +176,7 @@ PosCtrl_Handle_t PosCtrlM1 =
   .SysTickPeriod = 1.0f/SYS_TICK_FREQUENCY,
   .AlignmentCfg  = TC_ABSOLUTE_ALIGNMENT_SUPPORTED,
 };
+#endif
 
 /**
   * @brief  SpeednTorque Controller parameters Motor 1
@@ -353,6 +355,17 @@ STO_PLL_Handle_t STO_PLL_M1 =
  .SpeedBufferSizeDppLOG              =	STO_FIFO_DEPTH_DPP_LOG,
  .hForcedDirection                   =  0x0000U
 };
+
+#ifdef SPD_CTRL
+STO_Handle_t STO_M1 =
+{
+  ._Super                        = (SpeednPosFdbk_Handle_t*)&STO_PLL_M1, //cstat !MISRAC2012-Rule-11.3
+  .pFctForceConvergency1         = &STO_PLL_ForceConvergency1,
+  .pFctForceConvergency2         = &STO_PLL_ForceConvergency2,
+  .pFctStoOtfResetPLL            = &STO_OTF_ResetPLL,
+  .pFctSTO_SpeedReliabilityCheck = &STO_PLL_IsVarianceTight
+};
+#endif
 #elif defined(OBSERVER_CORDIC)
 /**
   * @brief  SpeedNPosition sensor parameters Motor 1 - State Observer + CORDIC
@@ -524,7 +537,9 @@ NTC_Handle_t *pTemperatureSensor[NBR_OF_MOTORS] = {&TempSensor_M1};
 PID_Handle_t *pPIDIq[NBR_OF_MOTORS] = {&PIDIqHandle_M1};
 PID_Handle_t *pPIDId[NBR_OF_MOTORS] = {&PIDIdHandle_M1};
 PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS] = {&PQD_MotorPowMeasM1};
+#ifndef SPD_CTRL
 PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS] = {&PosCtrlM1};
+#endif
 #ifdef FLUX_WEAKENING
 FW_Handle_t *pFW[NBR_OF_MOTORS] = {&FW_M1};
 #endif

@@ -403,19 +403,20 @@ __weak void TSK_MediumFrequencyTaskM1(void)
   MC_ControlMode_t mode;
 
   mode = MCI_GetControlMode( &Mci[M1] );
-#ifdef OBSERVER_PLL
-  (void)STO_PLL_CalcAvrgMecSpeedUnit(&STO_PLL_M1, &wAux);
-#elif defined(OBSERVER_CORDIC)
-  (void)STO_CR_CalcAvrgMecSpeedUnit(&STO_CR_M1, &wAux);
-#endif
   (void)ENC_CalcAvrgMecSpeedUnit(&ENCODER_M1, &wAux);
 #ifdef SPD_CTRL
-#ifdef OBSERVER_PLL
-#elif defined(OBSERVER_CORDIC)
-  bool IsSpeedReliable = STO_CR_CalcAvrgMecSpeedUnit(&STO_CR_M1, &wAux);
+  bool IsSpeedReliable = 
 #else
-  bool IsSpeedReliable = ENC_CalcAvrgMecSpeedUnit(&STO_M1, &wAux);
+  (void)
 #endif
+#ifdef OBSERVER_PLL
+  STO_PLL_CalcAvrgMecSpeedUnit(&STO_PLL_M1, &wAux);
+#elif defined(OBSERVER_CORDIC)
+  STO_CR_CalcAvrgMecSpeedUnit(&STO_CR_M1, &wAux);
+#else
+  #ifdef SPD_CTRL
+    #error Not implemented
+  #endif
 #endif
   PQD_CalcElMotorPower(pMPM[M1]);
 
@@ -574,8 +575,10 @@ __weak void TSK_MediumFrequencyTaskM1(void)
             else
             {
               R3_2_SwitchOffPWM( pwmcHandle[M1] );
+#ifndef SPD_CTRL
               STC_SetControlMode(pSTC[M1], MCM_SPEED_MODE);
               STC_SetSpeedSensor(pSTC[M1], &ENCODER_M1._Super);
+#endif
 
               FOC_Clear(M1);
               TSK_SetStopPermanencyTimeM1(STOPPERMANENCY_TICKS);
@@ -628,7 +631,8 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 
             {
 #ifdef OBSERVER_PLL
-#error Not implemented
+             ObserverConverged = STO_PLL_IsObserverConverged(&STO_PLL_M1, &hForcedMecSpeedUnit);
+             STO_SetDirection(&STO_PLL_M1, (int8_t)MCI_GetImposedMotorDirection(&Mci[M1]));
 #elif defined(OBSERVER_CORDIC)
               ObserverConverged = STO_CR_IsObserverConverged(&STO_CR_M1, hForcedMecSpeedUnit);
 #else
@@ -639,7 +643,13 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 
             if (ObserverConverged)
             {
+#ifdef OBSERVER_PLL
+              qd_t StatorCurrent = MCM_Park(FOCVars[M1].Ialphabeta, SPD_GetElAngle(&STO_PLL_M1._Super));
+#elif defined(OBSERVER_CORDIC)
               qd_t StatorCurrent = MCM_Park(FOCVars[M1].Ialphabeta, SPD_GetElAngle(&STO_CR_M1._Super));
+#else
+#error Not implemented
+#endif
 
               /* Start switch over ramp. This ramp will transition from the revup to the closed loop FOC. */
               REMNG_Init(pREMNG[M1]);
@@ -695,7 +705,13 @@ __weak void TSK_MediumFrequencyTaskM1(void)
                 /* USER CODE BEGIN MediumFrequencyTask M1 1 */
 
                 /* USER CODE END MediumFrequencyTask M1 1 */
+#ifdef OBSERVER_PLL
+                STC_SetSpeedSensor(pSTC[M1], &STO_PLL_M1._Super); /*Observer has converged*/
+#elif defined(OBSERVER_CORDIC)
                 STC_SetSpeedSensor(pSTC[M1], &STO_CR_M1._Super); /*Observer has converged*/
+#else
+#error Not implemented
+#endif
                 FOC_InitAdditionalMethods(M1);
                 FOC_CalcCurrRef( M1 );
                 STC_ForceSpeedReferenceToCurrentSpeed(pSTC[M1]); /* Init the reference speed to current speed */
@@ -807,7 +823,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 #endif
 #ifdef SENSORLESS
   #ifdef OBSERVER_PLL
-    #error Not implemented
+              STO_PLL_Clear( &STO_PLL_M1 );
   #elif defined(OBSERVER_CORDIC)
               STO_CR_Clear( &STO_CR_M1 );
   #else
@@ -1129,10 +1145,18 @@ __weak uint8_t TSK_HighFrequencyTask(void)
   else
   {
 #ifdef SENSORLESS
+  #ifdef OBSERVER_PLL
+    bool IsAccelerationStageReached = RUC_FirstAccelerationStageReached(&RevUpControlM1);
+  #endif
     STO_Inputs.Ialfa_beta = FOCVars[M1].Ialphabeta; /*  only if sensorless*/
     STO_Inputs.Vbus = VBS_GetAvBusVoltage_d(&(BusVoltageSensor_M1._Super)); /*  only for sensorless*/
   #ifdef OBSERVER_PLL
-  #error Not implemented
+    (void)( void )STO_PLL_CalcElAngle(&STO_PLL_M1, &STO_Inputs);
+    STO_PLL_CalcAvrgElSpeedDpp(&STO_PLL_M1); /*  Only in case of Sensor-less */
+	 if (false == IsAccelerationStageReached)
+    {
+      STO_ResetPLL(&STO_PLL_M1);
+    }
   #elif defined(OBSERVER_CORDIC)
     (void)STO_CR_CalcElAngle(&STO_CR_M1, &STO_Inputs);
     STO_CR_CalcAvrgElSpeedDpp(&STO_CR_M1); /*  Only in case of Sensor-less */
@@ -1143,13 +1167,13 @@ __weak uint8_t TSK_HighFrequencyTask(void)
     if(((uint16_t)START == Mci[M1].State) || ((uint16_t)SWITCH_OVER == Mci[M1].State) || ((uint16_t)RUN == Mci[M1].State))
     {
   #ifdef OBSERVER_PLL
-  #error Not implemented
+      int16_t hObsAngle = SPD_GetElAngle(&STO_PLL_M1._Super);
   #elif defined(OBSERVER_CORDIC)
       int16_t hObsAngle = SPD_GetElAngle(&STO_CR_M1._Super);
-      (void)VSS_CalcElAngle(&VirtualSpeedSensorM1, &hObsAngle);
   #else
   #error Not implemented
   #endif
+      (void)VSS_CalcElAngle(&VirtualSpeedSensorM1, &hObsAngle);
     }
 #else
   #if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)

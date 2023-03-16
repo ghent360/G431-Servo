@@ -370,7 +370,9 @@ void EXTI9_5_IRQHandler (void)
   if (LL_EXTI_ReadFlag_0_31(LL_EXTI_LINE_8))
   {
     LL_EXTI_ClearFlag_0_31 (LL_EXTI_LINE_8);
+#ifndef SPD_CTRL
     TC_EncoderReset(&PosCtrlM1);
+#endif
   }
 
 }

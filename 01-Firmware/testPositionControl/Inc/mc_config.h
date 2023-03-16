@@ -76,8 +76,10 @@ extern NTC_Handle_t TempSensor_M1;
 extern PID_Handle_t PIDFluxWeakeningHandle_M1;
 extern FW_Handle_t FW_M1;
 #endif
+#ifndef SPD_CTRL
 extern PID_Handle_t PID_PosParamsM1;
 extern PosCtrl_Handle_t PosCtrlM1;
+#endif
 
 extern PWMC_R3_2_Handle_t PWM_Handle_M1;
 
@@ -90,8 +92,7 @@ extern STO_Handle_t STO_M1;
 #endif
 #ifdef OBSERVER_PLL
 extern STO_PLL_Handle_t STO_PLL_M1;
-#endif
-#ifdef OBSERVER_CORDIC
+#elif defined(OBSERVER_CORDIC)
 extern STO_CR_Handle_t STO_CR_M1;
 #endif
 extern ENCODER_Handle_t ENCODER_M1;
@@ -110,7 +111,9 @@ extern PID_Handle_t *pPIDIq[NBR_OF_MOTORS];
 extern PID_Handle_t *pPIDId[NBR_OF_MOTORS];
 extern NTC_Handle_t *pTemperatureSensor[NBR_OF_MOTORS];
 extern PQD_MotorPowMeas_Handle_t *pMPM[NBR_OF_MOTORS];
+#ifndef SPD_CTRL
 extern PosCtrl_Handle_t *pPosCtrl[NBR_OF_MOTORS];
+#endif
 #ifdef FLUX_WEAKENING
 extern FW_Handle_t *pFW[NBR_OF_MOTORS];
 #endif
