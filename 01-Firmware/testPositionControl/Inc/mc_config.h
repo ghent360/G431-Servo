@@ -37,7 +37,9 @@
 #ifdef FLUX_WEAKENING
 #include "flux_weakening_ctrl.h"
 #endif
+#ifndef SPD_CTRL
 #include "trajectory_ctrl.h"
+#endif
 #include "pqd_motor_power_measurement.h"
 
 #include "r3_2_g4xx_pwm_curr_fdbk.h"
@@ -64,7 +66,7 @@
 
 /* USER CODE END Additional include */
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
 extern RevUpCtrl_Handle_t RevUpControlM1;
 #endif
 

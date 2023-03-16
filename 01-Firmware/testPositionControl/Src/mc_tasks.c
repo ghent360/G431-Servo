@@ -187,7 +187,7 @@ __weak void MCboot( MCI_Handle_t* pMCIList[NBR_OF_MOTORS] )
     /****************************************************/
     VSS_Init(&VirtualSpeedSensorM1);
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
     /**************************************/
     /*   Rev-up component initialization  */
     /**************************************/
@@ -404,7 +404,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 
   mode = MCI_GetControlMode( &Mci[M1] );
   (void)ENC_CalcAvrgMecSpeedUnit(&ENCODER_M1, &wAux);
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
   bool IsSpeedReliable = 
 #else
   (void)
@@ -414,8 +414,8 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 #elif defined(OBSERVER_CORDIC)
   STO_CR_CalcAvrgMecSpeedUnit(&STO_CR_M1, &wAux);
 #else
-  #ifdef SPD_CTRL
-    #error Not implemented
+  #if defined(SPD_CTRL) && defined(SENSORLESS)
+    #error For Sensorless control must define OBSERVER_PLL or OBSERVER_CORDIC
   #endif
 #endif
   PQD_CalcElMotorPower(pMPM[M1]);
@@ -430,7 +430,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
         {
           if ((MCI_START == Mci[M1].DirectCommand) || (MCI_MEASURE_OFFSETS == Mci[M1].DirectCommand))
           {
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
             if ( mode != MCM_OPEN_LOOP_VOLTAGE_MODE && mode != MCM_OPEN_LOOP_CURRENT_MODE)
             {
               RUC_Clear(&RevUpControlM1, MCI_GetImposedMotorDirection(&Mci[M1]));
@@ -530,7 +530,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
               else
               {
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
                 VSS_Clear(&VirtualSpeedSensorM1); /* Reset measured speed in IDLE */
                 FOC_Clear(M1);
                 Mci[M1].State = START;
@@ -592,7 +592,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
           break;
         }
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
         case START:
         {
           if (MCI_STOP == Mci[M1].DirectCommand)
@@ -636,7 +636,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 #elif defined(OBSERVER_CORDIC)
               ObserverConverged = STO_CR_IsObserverConverged(&STO_CR_M1, hForcedMecSpeedUnit);
 #else
-#error Not implemented
+#error For Sensorless control must define OBSERVER_PLL or OBSERVER_CORDIC
 #endif
               (void)VSS_SetStartTransition(&VirtualSpeedSensorM1, ObserverConverged);
             }
@@ -648,7 +648,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 #elif defined(OBSERVER_CORDIC)
               qd_t StatorCurrent = MCM_Park(FOCVars[M1].Ialphabeta, SPD_GetElAngle(&STO_CR_M1._Super));
 #else
-#error Not implemented
+#error For Sensorless control must define OBSERVER_PLL or OBSERVER_CORDIC
 #endif
 
               /* Start switch over ramp. This ramp will transition from the revup to the closed loop FOC. */
@@ -710,7 +710,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 #elif defined(OBSERVER_CORDIC)
                 STC_SetSpeedSensor(pSTC[M1], &STO_CR_M1._Super); /*Observer has converged*/
 #else
-#error Not implemented
+#error For Sensorless control must define OBSERVER_PLL or OBSERVER_CORDIC
 #endif
                 FOC_InitAdditionalMethods(M1);
                 FOC_CalcCurrRef( M1 );
@@ -745,7 +745,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
 
               FOC_CalcCurrRef(M1);
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
               if(!IsSpeedReliable)
               {
                 MCI_FaultProcessing(&Mci[M1], MC_SPEED_FDBK, 0);
@@ -770,7 +770,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
           if (TSK_StopPermanencyTimeHasElapsedM1())
           {
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
             STC_SetSpeedSensor(pSTC[M1], &VirtualSpeedSensorM1._Super);  	/*  sensor-less */
             VSS_Clear(&VirtualSpeedSensorM1); /* Reset measured speed in IDLE */
 #endif
@@ -818,7 +818,7 @@ __weak void TSK_MediumFrequencyTaskM1(void)
           {
             if (TSK_StopPermanencyTimeHasElapsedM1())
             {
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
               RUC_Clear(&RevUpControlM1, MCI_GetImposedMotorDirection(&Mci[M1]));
 #endif
 #ifdef SENSORLESS
@@ -827,19 +827,21 @@ __weak void TSK_MediumFrequencyTaskM1(void)
   #elif defined(OBSERVER_CORDIC)
               STO_CR_Clear( &STO_CR_M1 );
   #else
-    #error Not implemnted
+    #error For Sensorless control must define OBSERVER_PLL or OBSERVER_CORDIC
   #endif
 #endif
               ENC_Clear(&ENCODER_M1);
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
               VSS_Clear(&VirtualSpeedSensorM1);
 #endif
               R3_2_SwitchOnPWM( pwmcHandle[M1] );
-#ifdef SPD_CTRL
+
+#if defined(SPD_CTRL) && defined(SENSORLESS)
               Mci[M1].State = START;
 #else
+  #ifndef SPD_CTRL)
               TC_EncAlignmentCommand(pPosCtrl[M1]);
-
+  #endif
               FOC_InitAdditionalMethods(M1);
               STC_ForceSpeedReferenceToCurrentSpeed( pSTC[M1] ); /* Init the reference speed to current speed */
               MCI_ExecBufferedCommands( &Mci[M1] ); /* Exec the speed ramp after changing of the speed sensor */

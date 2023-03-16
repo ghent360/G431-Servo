@@ -196,7 +196,7 @@ SpeednTorqCtrl_Handle_t SpeednTorqCtrlM1 =
   .IdrefDefault =                    (int16_t)DEFAULT_FLUX_COMPONENT,
 };
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
 RevUpCtrl_Handle_t RevUpControlM1 =
 {
   .hRUCFrequencyHz         = MEDIUM_FREQUENCY_TASK_RATE,
@@ -356,7 +356,7 @@ STO_PLL_Handle_t STO_PLL_M1 =
  .hForcedDirection                   =  0x0000U
 };
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
 STO_Handle_t STO_M1 =
 {
   ._Super                        = (SpeednPosFdbk_Handle_t*)&STO_PLL_M1, //cstat !MISRAC2012-Rule-11.3
@@ -406,7 +406,7 @@ STO_CR_Handle_t STO_CR_M1 =
   .SpeedBufferSizedppLOG              =	CORD_FIFO_DEPTH_DPP_LOG
 };
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
 STO_Handle_t STO_M1 =
 {
   ._Super                        = (SpeednPosFdbk_Handle_t*)&STO_CR_M1, //cstat !MISRAC2012-Rule-11.3

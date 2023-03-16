@@ -28,7 +28,7 @@
 #include "mcpa.h"
 #include "mc_configuration_registers.h"
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
 static RevUpCtrl_Handle_t *RevUpControl[NBR_OF_MOTORS] = { &RevUpControlM1 };
 #endif
 #ifdef OBSERVER_PLL
@@ -238,16 +238,20 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             break;
           }
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
           case MC_REG_RUC_STAGE_NBR:
-#else
-          case MC_REG_POSITION_CTRL_STATE:
-          case MC_REG_POSITION_ALIGN_STATE:
-#endif
           {
             retVal = MCP_ERROR_RO_REG;
             break;
           }
+#elif !defined(SPD_CTRL)
+          case MC_REG_POSITION_CTRL_STATE:
+          case MC_REG_POSITION_ALIGN_STATE:
+          {
+            retVal = MCP_ERROR_RO_REG;
+            break;
+          }
+#endif
           default:
           {
             retVal = MCP_ERROR_UNKNOWN_REG;
@@ -722,7 +726,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
               break;
             }
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
             case MC_REG_REVUP_DATA:
             {
               int32_t rpm;
@@ -747,7 +751,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
               }
               break;
             }
-#else
+#elif !defined(SPD_CTRL)
             case MC_REG_POSITION_RAMP:
             {
               FloatToU32 Position;
@@ -835,13 +839,13 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
             case MC_REG_RUC_STAGE_NBR:
             {
               *data = (RevUpControl[motorID] != MC_NULL) ? (uint8_t)RUC_GetNumberOfPhases(RevUpControl[motorID]) : 0U;
               break;
             }
-#else
+#elif !defined(SPD_CTRL)
             case MC_REG_POSITION_CTRL_STATE:
             {
               *data = (uint8_t) TC_GetControlPositionStatus(pPosCtrl[motorID]);
@@ -1571,7 +1575,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             break;
           }
 
-#ifdef SPD_CTRL
+#if defined(SPD_CTRL) && defined(SENSORLESS)
           case MC_REG_REVUP_DATA:
           {
             int32_t *rpm;

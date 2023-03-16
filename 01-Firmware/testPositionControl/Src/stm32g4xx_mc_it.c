@@ -361,6 +361,7 @@ void EXTI15_10_IRQHandler (void)
 
 }
 
+#ifndef SPD_CTRL
 /**
   * @brief  This function handles M1 Encoder Index IRQ on PIN PB8.
   */
@@ -370,12 +371,12 @@ void EXTI9_5_IRQHandler (void)
   if (LL_EXTI_ReadFlag_0_31(LL_EXTI_LINE_8))
   {
     LL_EXTI_ClearFlag_0_31 (LL_EXTI_LINE_8);
-#ifndef SPD_CTRL
+
     TC_EncoderReset(&PosCtrlM1);
-#endif
   }
 
 }
+#endif
 
 /* USER CODE BEGIN 1 */
 
