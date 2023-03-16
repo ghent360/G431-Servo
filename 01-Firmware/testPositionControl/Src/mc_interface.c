@@ -57,8 +57,12 @@
   * @param  pFOCVars pointer to FOC vars to be used by MCI.
   * @retval none.
   */
+#ifdef SPD_CTRL
+__weak void MCI_Init(MCI_Handle_t *pHandle, SpeednTorqCtrl_Handle_t *pSTC, pFOCVars_t pFOCVars, PWMC_Handle_t *pPWMHandle )
+#else
 __weak void MCI_Init(MCI_Handle_t *pHandle, SpeednTorqCtrl_Handle_t *pSTC,
                      pFOCVars_t pFOCVars, PosCtrl_Handle_t *pPosCtrl, PWMC_Handle_t *pPWMHandle )
+#endif
 {
 #ifdef NULL_PTR_MC_INT
   if (MC_NULL == pHandle)
@@ -70,7 +74,9 @@ __weak void MCI_Init(MCI_Handle_t *pHandle, SpeednTorqCtrl_Handle_t *pSTC,
 #endif
     pHandle->pSTC = pSTC;
     pHandle->pFOCVars = pFOCVars;
+#ifndef SPD_CTRL
     pHandle->pPosCtrl = pPosCtrl;
+#endif
     pHandle->pPWM = pPWMHandle;
 
     /* Buffer related initialization */
@@ -115,7 +121,6 @@ __weak void MCI_ExecSpeedRamp(MCI_Handle_t *pHandle,  int16_t hFinalSpeed, uint1
     pHandle->hFinalSpeed = hFinalSpeed;
     pHandle->hDurationms = hDurationms;
     pHandle->CommandState = MCI_COMMAND_NOT_ALREADY_EXECUTED;
-    pHandle->LastModalitySetByUser = MCM_SPEED_MODE;
 
 #ifdef NULL_PTR_MC_INT
   }
@@ -351,6 +356,7 @@ __weak void MCI_SetOpenLoopVoltage( MCI_Handle_t * pHandle )
   pHandle->LastModalitySetByUser = MCM_OPEN_LOOP_VOLTAGE_MODE;
 }
 
+#ifndef SPD_CTRL
 /**
   * @brief  This is a buffered command to set a mechanical position of rotor. This commands
   *         don't become active as soon as it is called but it will be executed
@@ -387,6 +393,7 @@ __weak void MCI_ExecPositionCommand(MCI_Handle_t *pHandle, float FinalPosition, 
   }
 #endif
 }
+#endif
 
 /**
   * @brief  This is a user command used to begin the start-up procedure.
@@ -791,6 +798,7 @@ __weak MCI_State_t  MCI_GetSTMState(MCI_Handle_t *pHandle)
   return (pHandle->State);
 }
 
+#ifndef SPD_CTRL
 /**
   * @brief  It returns information about the state of the position control.
   * @param  pHandle Pointer on the component instance to work on.
@@ -860,6 +868,7 @@ __weak float MCI_GetMoveDuration(MCI_Handle_t *pHandle)
   return (TC_GetMoveDuration(pHandle->pPosCtrl));
 #endif
 }
+#endif
 
 /**
   * @brief It returns a 16 bit fields containing information about faults

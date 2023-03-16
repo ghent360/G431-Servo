@@ -335,7 +335,9 @@ static uint8_t SystickDividerCounter = SYSTICK_DIVIDER;
   /* USER CODE BEGIN SysTick_IRQn 1 */
   /* USER CODE END SysTick_IRQn 1 */
     MC_RunMotorControlTasks();
+#ifndef SPD_CTRL
     TC_IncTick(&PosCtrlM1);
+#endif
 
   /* USER CODE BEGIN SysTick_IRQn 2 */
   /* USER CODE END SysTick_IRQn 2 */

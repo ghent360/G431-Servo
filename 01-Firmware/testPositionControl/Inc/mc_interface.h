@@ -32,7 +32,9 @@ extern "C" {
 #include "mc_type.h"
 #include "pwm_curr_fdbk.h"
 #include "speed_torq_ctrl.h"
+#ifndef SPD_CTRL
 #include "trajectory_ctrl.h"
+#endif
 #include "virtual_speed_sensor.h"
 /** @addtogroup MCSDK
   * @{
@@ -133,7 +135,9 @@ typedef struct
   pFOCVars_t pFOCVars;    /*!< Pointer to FOC vars used by MCI.*/
   PWMC_Handle_t *pPWM;    /*!< Pointer to PWM handle structure.*/
   VirtualSpeedSensor_Handle_t * pVSS;
+#ifndef SPD_CTRL
   PosCtrl_Handle_t * pPosCtrl; /*!< Position Control used by MCI.*/
+#endif
   MCI_UserCommands_t lastCommand; /*!< Last command coming from the user.*/
   int16_t hFinalSpeed;        /*!< Final speed of last ExecSpeedRamp command.*/
   int16_t hFinalTorque;       /*!< Final torque of last ExecTorqueRamp
@@ -152,6 +156,9 @@ typedef struct
 } MCI_Handle_t;
 
 /* Exported functions ------------------------------------------------------- */
+#ifdef SPD_CTRL
+void MCI_Init( MCI_Handle_t * pHandle, SpeednTorqCtrl_Handle_t * pSTC, pFOCVars_t pFOCVars, PWMC_Handle_t *pPWMHandle );
+#else
 void MCI_Init( MCI_Handle_t * pHandle, SpeednTorqCtrl_Handle_t * pSTC, pFOCVars_t pFOCVars, PosCtrl_Handle_t * pPosCtrl, PWMC_Handle_t *pPWMHandle );
 void MCI_ExecPositionCommand( MCI_Handle_t * pHandle, float FinalPosition, float Duration );
 PosCtrlStatus_t MCI_GetCtrlPositionState( MCI_Handle_t * pHandle );
@@ -159,6 +166,7 @@ AlignStatus_t  MCI_GetAlignmentStatus( MCI_Handle_t * pHandle );
 float MCI_GetCurrentPosition( MCI_Handle_t * pHandle );
 float MCI_GetTargetPosition( MCI_Handle_t * pHandle );
 float MCI_GetMoveDuration( MCI_Handle_t * pHandle );
+#endif
 void MCI_ExecBufferedCommands( MCI_Handle_t * pHandle );
 void MCI_ExecSpeedRamp( MCI_Handle_t * pHandle,  int16_t hFinalSpeed, uint16_t hDurationms );
 void MCI_ExecSpeedRamp_F( MCI_Handle_t * pHandle, const float FinalSpeed, uint16_t hDurationms );

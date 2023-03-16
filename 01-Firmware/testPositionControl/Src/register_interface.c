@@ -28,6 +28,9 @@
 #include "mcpa.h"
 #include "mc_configuration_registers.h"
 
+#ifdef SPD_CTRL
+static RevUpCtrl_Handle_t *RevUpControl[NBR_OF_MOTORS] = { &RevUpControlM1 };
+#endif
 #ifdef OBSERVER_PLL
 static STO_PLL_Handle_t * stoPLLSensor [NBR_OF_MOTORS] = { &STO_PLL_M1 };
 #elif defined(OBSERVER_CORDIC)
@@ -233,8 +236,12 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             break;
           }
 
+#ifdef SPD_CTRL
+          case MC_REG_RUC_STAGE_NBR:
+#else
           case MC_REG_POSITION_CTRL_STATE:
           case MC_REG_POSITION_ALIGN_STATE:
+#endif
           {
             retVal = MCP_ERROR_RO_REG;
             break;
@@ -458,6 +465,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
           }
 #endif
 
+#ifndef SPD_CTRL
           case MC_REG_POSITION_KP:
           {
             PID_SetKP(pPIDPosCtrl[motorID], regdata16);
@@ -475,6 +483,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             PID_SetKD(pPIDPosCtrl[motorID], regdata16);
             break;
           }
+#endif
           case MC_REG_SPEED_KP_DIV:
           {
             PID_SetKPDivisorPOW2(pPIDSpeed[motorID], regdata16);
@@ -528,6 +537,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             PID_SetKDDivisorPOW2(pPIDIq[motorID], regdata16);
             break;
           }
+#ifndef SPD_CTRL
           case MC_REG_POSITION_KP_DIV:
           {
             PID_SetKPDivisorPOW2(pPIDPosCtrl[motorID], regdata16);
@@ -545,6 +555,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
             PID_SetKDDivisorPOW2(pPIDPosCtrl[motorID], regdata16);
             break;
           }
+#endif
 #ifdef OBSERVER_PLL
           case MC_REG_STOPLL_KI_DIV:
           {
@@ -709,6 +720,32 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
               break;
             }
 
+#ifdef SPD_CTRL
+            case MC_REG_REVUP_DATA:
+            {
+              int32_t rpm;
+              RevUpCtrl_PhaseParams_t revUpPhase;
+              uint8_t i;
+              uint8_t nbrOfPhase = (((uint8_t)rawSize) / 8U);
+
+              if (((0U != ((rawSize) % 8U))) || ((nbrOfPhase > RUC_MAX_PHASE_NUMBER) != 0))
+              {
+                retVal = MCP_ERROR_BAD_RAW_FORMAT;
+              }
+              else
+              {
+                for (i = 0; i <nbrOfPhase; i++)
+                {
+                rpm = *(int32_t *) &rawData[i * 8U]; //cstat !MISRAC2012-Rule-11.3
+                revUpPhase.hFinalMecSpeedUnit = (((int16_t)rpm) * ((int16_t)SPEED_UNIT)) / ((int16_t)U_RPM);
+                revUpPhase.hFinalTorque = *((int16_t *) &rawData[4U + (i * 8U)]); //cstat !MISRAC2012-Rule-11.3
+                revUpPhase.hDurationms  = *((uint16_t *) &rawData[6U +(i * 8U)]); //cstat !MISRAC2012-Rule-11.3
+                (void)RUC_SetPhase( RevUpControl[motorID], i, &revUpPhase);
+                }
+              }
+              break;
+            }
+#else
             case MC_REG_POSITION_RAMP:
             {
               FloatToU32 Position;
@@ -719,6 +756,7 @@ uint8_t RI_SetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t data
               MCI_ExecPositionCommand(pMCIN, Position.Float_Val, Duration.Float_Val);
               break;
             }
+#endif
 
             case MC_REG_ASYNC_UARTA:
             {
@@ -795,6 +833,13 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 
+#ifdef SPD_CTRL
+            case MC_REG_RUC_STAGE_NBR:
+            {
+              *data = (RevUpControl[motorID] != MC_NULL) ? (uint8_t)RUC_GetNumberOfPhases(RevUpControl[motorID]) : 0U;
+              break;
+            }
+#else
             case MC_REG_POSITION_CTRL_STATE:
             {
               *data = (uint8_t) TC_GetControlPositionStatus(pPosCtrl[motorID]);
@@ -805,6 +850,8 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *data = (uint8_t) TC_GetAlignmentStatus(pPosCtrl[motorID]);
               break;
             }
+#endif
+
             default:
             {
               retVal = MCP_ERROR_UNKNOWN_REG;
@@ -1161,6 +1208,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             }
 #endif
 
+#ifndef SPD_CTRL
             case MC_REG_POSITION_KP:
             {
               *regdata16 = PID_GetKP( pPIDPosCtrl[motorID]);
@@ -1178,6 +1226,8 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdata16 = PID_GetKD( pPIDPosCtrl[motorID]);
               break;
             }
+#endif
+
             case MC_REG_SPEED_KP_DIV:
             {
               *regdataU16 = (uint16_t)PID_GetKPDivisorPOW2(pPIDSpeed[motorID]);
@@ -1231,7 +1281,8 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 
-            case MC_REG_POSITION_KP_DIV:
+ #ifndef SPD_CTRL
+           case MC_REG_POSITION_KP_DIV:
             {
               *regdataU16 = PID_GetKPDivisorPOW2(pPIDPosCtrl[motorID]);
               break;
@@ -1248,7 +1299,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdataU16 = PID_GetKDDivisorPOW2(pPIDPosCtrl[motorID]);
               break;
             }
-
+#endif
 #ifdef OBSERVER_PLL
             case MC_REG_STOPLL_KI_DIV:
             {
@@ -1366,6 +1417,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               break;
             }
 #endif
+#ifndef SPD_CTRL
             case MC_REG_CURRENT_POSITION:
             {
               FloatToU32 ReadVal;
@@ -1373,7 +1425,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
               *regdataU32 = ReadVal.U32_Val;
               break;
             }
-
+#endif
             case MC_REG_MOTOR_POWER:
             {
               FloatToU32 ReadVal;
@@ -1517,6 +1569,37 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             break;
           }
 
+#ifdef SPD_CTRL
+          case MC_REG_REVUP_DATA:
+          {
+            int32_t *rpm;
+            uint16_t *finalTorque;
+            uint16_t *durationms;
+            RevUpCtrl_PhaseParams_t revUpPhase;
+            uint8_t i;
+
+            *rawSize = (uint16_t)RUC_MAX_PHASE_NUMBER*8U;
+            if (((*rawSize) + 2U) > freeSpace)
+            {
+              retVal = MCP_ERROR_NO_TXSYNC_SPACE;
+            }
+            else
+            {
+              for (i = 0; i <RUC_MAX_PHASE_NUMBER; i++)
+              {
+                (void)RUC_GetPhase( RevUpControl[motorID] ,i, &revUpPhase);
+                rpm = (int32_t *) &data[2U + (i*8U)];  //cstat !MISRAC2012-Rule-11.3
+                *rpm = (((int32_t)revUpPhase.hFinalMecSpeedUnit) * U_RPM) / SPEED_UNIT; //cstat !MISRAC2012-Rule-11.3
+                finalTorque = (uint16_t *)&data[6U + (i * 8U)]; //cstat !MISRAC2012-Rule-11.3
+                *finalTorque = (uint16_t)revUpPhase.hFinalTorque; //cstat !MISRAC2012-Rule-11.3
+                durationms  = (uint16_t *)&data[8U + (i * 8U)]; //cstat !MISRAC2012-Rule-11.3
+                *durationms  = revUpPhase.hDurationms;
+              }
+            }
+            break;
+          }
+#endif
+
           case MC_REG_CURRENT_REF:
           {
             uint16_t *iqref = (uint16_t *)rawData; //cstat !MISRAC2012-Rule-11.3
@@ -1527,6 +1610,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             *idref = (uint16_t)MCI_GetIqdref(pMCIN).d;
             break;
     }
+#ifndef SPD_CTRL
           case MC_REG_POSITION_RAMP:
           {
             float Position;
@@ -1539,6 +1623,7 @@ uint8_t RI_GetReg (uint16_t dataID, uint8_t * data, uint16_t *size, int16_t free
             memcpy(&rawData[4], &Duration, 4);
             break;
           }
+#endif
 
           case MC_REG_ASYNC_UARTA:
           case MC_REG_ASYNC_UARTB:

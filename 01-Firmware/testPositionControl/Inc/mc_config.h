@@ -64,6 +64,10 @@
 
 /* USER CODE END Additional include */
 
+#ifdef SPD_CTRL
+extern RevUpCtrl_Handle_t RevUpControlM1;
+#endif
+
 extern PID_Handle_t PIDSpeedHandle_M1;
 extern PID_Handle_t PIDIqHandle_M1;
 extern PID_Handle_t PIDIdHandle_M1;
@@ -81,6 +85,9 @@ extern SpeednTorqCtrl_Handle_t SpeednTorqCtrlM1;
 extern PQD_MotorPowMeas_Handle_t PQD_MotorPowMeasM1;
 extern PQD_MotorPowMeas_Handle_t *pPQD_MotorPowMeasM1;
 extern VirtualSpeedSensor_Handle_t VirtualSpeedSensorM1;
+#ifdef SPD_CTRL
+extern STO_Handle_t STO_M1;
+#endif
 #ifdef OBSERVER_PLL
 extern STO_PLL_Handle_t STO_PLL_M1;
 #endif

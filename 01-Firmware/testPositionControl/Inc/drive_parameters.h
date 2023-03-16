@@ -143,7 +143,13 @@
 #define TF_KDDIV_LOG                  LOG2((8192))
 #define TFDIFFERENTIAL_TERM_ENABLING  DISABLE
 
+#ifdef SPD_CTRL
+/* Speed control loop */
+#define SPEED_LOOP_FREQUENCY_HZ       ( uint16_t )1000 /*!<Execution rate of speed
+                                                      regulation loop (Hz) */
+#else
 #define POSITION_LOOP_FREQUENCY_HZ    ( uint16_t )2000 /*!<Execution rate of position control regulation loop (Hz) */
+#endif
 
 #define PID_SPEED_KP_DEFAULT          3859/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
 #define PID_SPEED_KI_DEFAULT          363/(SPEED_UNIT/10) /* Workbench compute the gain for 01Hz unit*/
@@ -231,10 +237,37 @@
                                                      applied when frequency is zero. */
 /* USER CODE END OPENLOOP M1 */
 
-#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
+#ifdef SPD_CTRL
+/* Phase 1 */
+#define PHASE1_DURATION                1000 /*milliseconds */
+#define PHASE1_FINAL_SPEED_UNIT         (0*SPEED_UNIT/U_RPM)
+#define PHASE1_FINAL_CURRENT           13607
+/* Phase 2 */
+#define PHASE2_DURATION                1968 /*milliseconds */
+#define PHASE2_FINAL_SPEED_UNIT         (984*SPEED_UNIT/U_RPM)
+#define PHASE2_FINAL_CURRENT           13607
+/* Phase 3 */
+#define PHASE3_DURATION                0 /*milliseconds */
+#define PHASE3_FINAL_SPEED_UNIT         (984*SPEED_UNIT/U_RPM)
+#define PHASE3_FINAL_CURRENT           13607
+/* Phase 4 */
+#define PHASE4_DURATION                0 /*milliseconds */
+#define PHASE4_FINAL_SPEED_UNIT         (984*SPEED_UNIT/U_RPM)
+#define PHASE4_FINAL_CURRENT           13607
+/* Phase 5 */
+#define PHASE5_DURATION                0 /* milliseconds */
+#define PHASE5_FINAL_SPEED_UNIT         (984*SPEED_UNIT/U_RPM)
+#define PHASE5_FINAL_CURRENT           13607
+
+#define ENABLE_SL_ALGO_FROM_PHASE      2
+/* Sensor-less rev-up sequence */
+#define STARTING_ANGLE_DEG             0  /*!< degrees [0...359] */
+#endif
+
 /* Observer start-up output conditions  */
 #define OBS_MINIMUM_SPEED_RPM          1000
 
+#if defined(OBSERVER_PLL) || defined(OBSERVER_CORDIC)
 #define NB_CONSECUTIVE_TESTS           2 /* corresponding to
                                                          former NB_CONSECUTIVE_TESTS/
                                                          (TF_REGULATION_RATE/

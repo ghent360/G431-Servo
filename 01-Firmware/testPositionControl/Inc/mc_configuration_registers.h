@@ -118,33 +118,57 @@ typedef struct
 #define MCP_OVER_UARTA   (1U<< 1U)
 #define MCP_OVER_UARTB   0U
 
-#if defined(FLUX_WEAKENING) && defined(FEED_FORWARD)
-#define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|FEED_FORWARD_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
-#elif defined(FLUX_WEAKENING)
-#define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
-#elif defined(FEED_FORWARD)
-#define configurationFlag1_M1 (FEED_FORWARD_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+#ifdef SPD_CTRL
+  #if defined(FLUX_WEAKENING) && defined(FEED_FORWARD)
+    #define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|FEED_FORWARD_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #elif defined(FLUX_WEAKENING)
+    #define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #elif defined(FEED_FORWARD)
+    #define configurationFlag1_M1 (FEED_FORWARD_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #else
+    #define configurationFlag1_M1 (VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #endif
 #else
-#define configurationFlag1_M1 (POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #if defined(FLUX_WEAKENING) && defined(FEED_FORWARD)
+    #define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|FEED_FORWARD_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #elif defined(FLUX_WEAKENING)
+    #define configurationFlag1_M1 (FLUX_WEAKENING_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #elif defined(FEED_FORWARD)
+    #define configurationFlag1_M1 (FEED_FORWARD_FLAG|POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #else
+    #define configurationFlag1_M1 (POSITION_CTRL_FLAG|VBUS_SENSING_FLAG|TEMP_SENSING_FLAG)
+  #endif
 #endif
+
 #ifdef DISC_PWM
-#define configurationFlag2_M1 (DISCONTINUOUS_PWM_FLAG|DBG_OPEN_LOOP_FLAG)
-#elid defined(OVM_PWM)
-#define configurationFlag2_M1 (OVERMODULATION_FLAG|DBG_OPEN_LOOP_FLAG)
+  #define configurationFlag2_M1 (DISCONTINUOUS_PWM_FLAG|DBG_OPEN_LOOP_FLAG)
+#elif defined(OVM_PWM)
+  #define configurationFlag2_M1 (OVERMODULATION_FLAG|DBG_OPEN_LOOP_FLAG)
 #else
-#define configurationFlag2_M1 (DBG_OPEN_LOOP_FLAG)
+  #define configurationFlag2_M1 (DBG_OPEN_LOOP_FLAG)
 #endif
 
 #define MAX_OF_MOTORS 2U
 #define NBR_OF_MOTORS  1
 #define DRIVE_TYPE_M1  0
-#define PRIM_SENSOR_M1  EENCODER
-#ifdef OBSERVER_PLL
-#define AUX_SENSOR_M1  EPLL
-#elif defined(OBSERVER_CORDIC)
-#define AUX_SENSOR_M1  ECORDIC
+#ifdef SENSORLESS
+  #ifdef OBSERVER_PLL
+  #error not implemnted
+  #elif defined(OBSERVER_CORDIC)
+    #define PRIM_SENSOR_M1  ECORDIC
+    #define AUX_SENSOR_M1  EENCODER
+  #else
+    #error Must define OBSERVER_PLL or OBSERVER_CORDIC
+  #endif
 #else
-#define AUX_SENSOR_M1  ENO_SENSOR
+  #define PRIM_SENSOR_M1  EENCODER
+  #ifdef OBSERVER_PLL
+    #define AUX_SENSOR_M1  EPLL
+  #elif defined(OBSERVER_CORDIC)
+    #define AUX_SENSOR_M1  ECORDIC
+  #else
+    #define AUX_SENSOR_M1  ENO_SENSOR
+  #endif
 #endif
 #define TOPOLOGY_M1 0
 #define FOC_RATE_M1 1
